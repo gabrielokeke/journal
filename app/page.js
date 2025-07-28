@@ -2,6 +2,7 @@
 //app/page.js
 import { useState, useEffect } from 'react'
 import Head from 'next/head'
+import { SignedIn, SignedOut, RedirectToSignIn } from '@clerk/nextjs'
 import EntryForm from '../components/EntryForm'
 import EntryCard from '../components/EntryCard'
 
@@ -84,24 +85,33 @@ export default function Home() {
       <Head>
         <title>Daily Journal</title>
       </Head>
-      <main className="container mx-auto p-4">
-        <h1 className="text-3xl font-bold mb-4">My Daily Journal</h1>
-        {successMessage && <div className="text-green-500 mb-2">{successMessage}</div>}
-        {error && <div className="text-red-500 mb-2">{error}</div>}
-        <EntryForm onSubmit={handleSubmit} editingEntry={editingEntry} />
-        {loading ? (
-          <p>Loading...</p>
-        ) : (
-          entries.map((entry) => (
-            <EntryCard
-              key={entry._id}
-              entry={entry}
-              onEdit={() => setEditingEntry(entry)}
-              onDelete={() => handleDelete(entry._id)}
-            />
-          ))
-        )}
-      </main>
+      
+      {/* Only show journal to signed-in users */}
+      <SignedIn>
+        <main className="container mx-auto p-4">
+          <h1 className="text-3xl font-bold mb-4">My Daily Journal</h1>
+          {successMessage && <div className="text-green-500 mb-2">{successMessage}</div>}
+          {error && <div className="text-red-500 mb-2">{error}</div>}
+          <EntryForm onSubmit={handleSubmit} editingEntry={editingEntry} />
+          {loading ? (
+            <p>Loading...</p>
+          ) : (
+            entries.map((entry) => (
+              <EntryCard
+                key={entry._id}
+                entry={entry}
+                onEdit={() => setEditingEntry(entry)}
+                onDelete={() => handleDelete(entry._id)}
+              />
+            ))
+          )}
+        </main>
+      </SignedIn>
+
+      {/* Redirect to sign-in if not authenticated */}
+      <SignedOut>
+        <RedirectToSignIn />
+      </SignedOut>
     </>
   )
 }

@@ -32,7 +32,13 @@ const EntrySchema = new mongoose.Schema({
     enum: ['Work', 'Personal', 'Health', 'Learning', 'Creative', 'Social', 'Other'],
     default: 'Personal',
     required: true
-  }
+  },
+//user category to be integrated with clerk 
+  userId: {
+    type: String,
+    required: true,
+    index: true
+}
 
 }, { timestamps: true }) // Adds createdAt and updatedAt automatically
 
