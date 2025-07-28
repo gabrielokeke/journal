@@ -1,6 +1,6 @@
 # 📝 Journaling App
 
-This is a fullstack journaling app built with **Next.js** and **MongoDB**. It allows users to create, read, update, and delete journal entries, including mood tracking and personalization.
+This is a fullstack journaling app built with **Next.js** and **MongoDB**. It allows users to create, read, update, and delete journal entries, including mood tracking and category choices.
 
 ## 🚀 Features
 
@@ -24,7 +24,9 @@ This is a fullstack journaling app built with **Next.js** and **MongoDB**. It al
 MONGODB_URI=your-mongodb-uri
 
 Start the development server:
-npm run dev
+ npm run dev  
+
+
 Visit http://localhost:3000 to view the app.
 
 📦 Deployment
