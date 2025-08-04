@@ -2,7 +2,9 @@
 //app/page.js
 import { useState, useEffect } from 'react'
 import Head from 'next/head'
-import { SignedIn, SignedOut, RedirectToSignIn } from '@clerk/nextjs'
+import Link from 'next/link'
+import { SignedIn, SignedOut } from '@clerk/nextjs'
+import CustomUserProfile from '../components/CustomUserProfile'
 import EntryForm from '../components/EntryForm'
 import EntryCard from '../components/EntryCard'
 
@@ -83,35 +85,159 @@ export default function Home() {
   return (
     <>
       <Head>
-        <title>Daily Journal</title>
+        <title>Daily Journal - Your Personal Space</title>
       </Head>
-      
-      {/* Only show journal to signed-in users */}
-      <SignedIn>
-        <main className="container mx-auto p-4">
-          <h1 className="text-3xl font-bold mb-4">My Daily Journal</h1>
-          {successMessage && <div className="text-green-500 mb-2">{successMessage}</div>}
-          {error && <div className="text-red-500 mb-2">{error}</div>}
-          <EntryForm onSubmit={handleSubmit} editingEntry={editingEntry} />
-          {loading ? (
-            <p>Loading...</p>
-          ) : (
-            entries.map((entry) => (
-              <EntryCard
-                key={entry._id}
-                entry={entry}
-                onEdit={() => setEditingEntry(entry)}
-                onDelete={() => handleDelete(entry._id)}
-              />
-            ))
-          )}
-        </main>
-      </SignedIn>
 
-      {/* Redirect to sign-in if not authenticated */}
+      {/* Landing page for non-authenticated users */}
       <SignedOut>
-        <RedirectToSignIn />
+        <div className="min-h-screen bg-gradient-to-br from-purple-50 via-blue-50 to-indigo-100">
+          {/* Navigation */}
+          <nav className="bg-white/80 backdrop-blur-sm border-b border-gray-200">
+            <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+              <div className="flex justify-between items-center py-4">
+                <div className="flex items-center">
+                  <h1 className="text-2xl font-bold bg-gradient-to-r from-purple-600 to-blue-600 bg-clip-text text-transparent">
+                    Daily Journal
+                  </h1>
+                </div>
+                <div className="flex space-x-4">
+                  <Link
+                    href="/sign-in"
+                    className="text-gray-700 hover:text-gray-900 px-3 py-2 rounded-md text-sm font-medium transition-colors"
+                  >
+                    Sign In
+                  </Link>
+                  <Link
+                    href="/sign-up"
+                    className="bg-gradient-to-r from-purple-600 to-blue-600 text-white px-4 py-2 rounded-md text-sm font-medium hover:from-purple-700 hover:to-blue-700 transition-all transform hover:scale-105"
+                  >
+                    Get Started
+                  </Link>
+                </div>
+              </div>
+            </div>
+          </nav>
+
+          {/* Hero Section */}
+          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-20 pb-16">
+            <div className="text-center">
+              <h1 className="text-5xl md:text-6xl font-bold text-gray-900 mb-6">
+                Your thoughts deserve a
+                <span className="bg-gradient-to-r from-purple-600 to-blue-600 bg-clip-text text-transparent">
+                  {' '}beautiful home
+                </span>
+              </h1>
+              <p className="text-xl text-gray-600 mb-8 max-w-3xl mx-auto">
+                Capture your daily experiences, track your moods, and reflect on your journey. 
+                A private, secure space that's entirely yours.
+              </p>
+              <div className="flex flex-col sm:flex-row gap-4 justify-center">
+                <Link
+                  href="/sign-up"
+                  className="bg-gradient-to-r from-purple-600 to-blue-600 text-white px-8 py-4 rounded-lg text-lg font-medium hover:from-purple-700 hover:to-blue-700 transition-all transform hover:scale-105 shadow-lg"
+                >
+                  Start Journaling Today
+                </Link>
+                <Link
+                  href="/sign-in"
+                  className="border-2 border-gray-300 text-gray-700 px-8 py-4 rounded-lg text-lg font-medium hover:border-gray-400 hover:bg-gray-50 transition-all"
+                >
+                  I Already Have an Account
+                </Link>
+              </div>
+            </div>
+
+            {/* Features */}
+            <div className="mt-20 grid md:grid-cols-3 gap-8">
+              <div className="bg-white/60 backdrop-blur-sm p-8 rounded-xl shadow-lg border border-gray-200">
+                <div className="w-12 h-12 bg-gradient-to-r from-purple-500 to-blue-500 rounded-lg flex items-center justify-center mb-4">
+                  <span className="text-white text-2xl">📝</span>
+                </div>
+                <h3 className="text-xl font-semibold text-gray-900 mb-3">Write Freely</h3>
+                <p className="text-gray-600">
+                  Express your thoughts without limits. Add titles, content, and track your daily moods.
+                </p>
+              </div>
+
+              <div className="bg-white/60 backdrop-blur-sm p-8 rounded-xl shadow-lg border border-gray-200">
+                <div className="w-12 h-12 bg-gradient-to-r from-purple-500 to-blue-500 rounded-lg flex items-center justify-center mb-4">
+                  <span className="text-white text-2xl">🔒</span>
+                </div>
+                <h3 className="text-xl font-semibold text-gray-900 mb-3">Completely Private</h3>
+                <p className="text-gray-600">
+                  Your entries are encrypted and only visible to you. No one else can access your thoughts.
+                </p>
+              </div>
+
+              <div className="bg-white/60 backdrop-blur-sm p-8 rounded-xl shadow-lg border border-gray-200">
+                <div className="w-12 h-12 bg-gradient-to-r from-purple-500 to-blue-500 rounded-lg flex items-center justify-center mb-4">
+                  <span className="text-white text-2xl">💙</span>
+                </div>
+                <h3 className="text-xl font-semibold text-gray-900 mb-3">Track Your Journey</h3>
+                <p className="text-gray-600">
+                  Monitor your moods, categorize entries, and see your personal growth over time.
+                </p>
+              </div>
+            </div>
+          </div>
+        </div>
       </SignedOut>
+
+      {/* Dashboard for authenticated users */}
+      <SignedIn>
+        <div className="min-h-screen bg-gray-50">
+          {/* Navigation for logged in users */}
+          <nav className="bg-white shadow-sm border-b border-gray-200">
+            <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+              <div className="flex justify-between items-center py-4">
+                <h1 className="text-2xl font-bold bg-gradient-to-r from-purple-600 to-blue-600 bg-clip-text text-transparent">
+                  My Journal
+                </h1>
+                <CustomUserProfile />
+              </div>
+            </div>
+          </nav>
+
+          <main className="max-w-4xl mx-auto p-6">
+            {successMessage && (
+              <div className="bg-green-50 border border-green-200 text-green-800 px-4 py-3 rounded-lg mb-6">
+                {successMessage}
+              </div>
+            )}
+            {error && (
+              <div className="bg-red-50 border border-red-200 text-red-800 px-4 py-3 rounded-lg mb-6">
+                {error}
+              </div>
+            )}
+            
+            <EntryForm onSubmit={handleSubmit} editingEntry={editingEntry} />
+            
+            {loading ? (
+              <div className="text-center py-8">
+                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-purple-600 mx-auto"></div>
+                <p className="text-gray-600 mt-2">Loading your entries...</p>
+              </div>
+            ) : (
+              <div className="space-y-6 mt-8">
+                {entries.length === 0 ? (
+                  <div className="text-center py-12 bg-white rounded-lg shadow-sm">
+                    <p className="text-gray-600 text-lg">No entries yet. Start writing your first entry above!</p>
+                  </div>
+                ) : (
+                  entries.map((entry) => (
+                    <EntryCard
+                      key={entry._id}
+                      entry={entry}
+                      onEdit={() => setEditingEntry(entry)}
+                      onDelete={() => handleDelete(entry._id)}
+                    />
+                  ))
+                )}
+              </div>
+            )}
+          </main>
+        </div>
+      </SignedIn>
     </>
   )
 }
