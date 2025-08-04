@@ -13,7 +13,7 @@ export default function SignInPage() {
         </div>
         
         {/* Clerk SignIn component with custom styling */}
-        <div className="bg-white rounded-lg shadow-lg p-8">
+        <div className="bg-white rounded-lg shadow-lg p-2.5 lg:p-8">
           <SignIn 
             appearance={{
               elements: {

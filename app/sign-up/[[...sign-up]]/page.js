@@ -13,7 +13,7 @@ export default function SignUpPage() {
         </div>
         
         {/* Clerk SignUp component with custom styling */}
-        <div className="bg-white rounded-lg shadow-lg p-8">
+        <div className="bg-white rounded-lg shadow-lg p-2.5 lg:p-8">
           <SignUp 
             appearance={{
               elements: {

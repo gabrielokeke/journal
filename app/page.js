@@ -1,12 +1,26 @@
 "use client"
-//app/page.js
 import { useState, useEffect } from 'react'
 import Head from 'next/head'
 import Link from 'next/link'
 import { SignedIn, SignedOut } from '@clerk/nextjs'
+import { motion, AnimatePresence } from 'framer-motion'
+import { LuPenLine, LuLock, LuTrendingUp } from 'react-icons/lu'
 import CustomUserProfile from '../components/CustomUserProfile'
 import EntryForm from '../components/EntryForm'
 import EntryCard from '../components/EntryCard'
+
+const containerVariant = {
+  hidden: { opacity: 0 },
+  show: {
+    opacity: 1,
+    transition: { staggerChildren: 0.15, delayChildren: 0.2 }
+  },
+}
+
+const fadeInUp = {
+  hidden: { opacity: 0, y: 30 },
+  show: { opacity: 1, y: 0, transition: { duration: 0.5, ease: 'easeOut' } },
+}
 
 export default function Home() {
   const [entries, setEntries] = useState([])
@@ -93,23 +107,23 @@ export default function Home() {
         <div className="min-h-screen bg-gradient-to-br from-purple-50 via-blue-50 to-indigo-100">
           {/* Navigation */}
           <nav className="bg-white/80 backdrop-blur-sm border-b border-gray-200">
-            <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div className="max-w-7xl mx-auto px-3 sm:px-6 lg:px-8">
               <div className="flex justify-between items-center py-4">
                 <div className="flex items-center">
-                  <h1 className="text-2xl font-bold bg-gradient-to-r from-purple-600 to-blue-600 bg-clip-text text-transparent">
+                  <h1 className="lg:text-4xl text-xl font-bold bg-gradient-to-r from-purple-600 to-blue-600 bg-clip-text text-transparent">
                     Daily Journal
                   </h1>
                 </div>
-                <div className="flex space-x-4">
+                <div className="flex space-x-3 lg:space-x-4">
                   <Link
                     href="/sign-in"
-                    className="text-gray-700 hover:text-gray-900 px-3 py-2 rounded-md text-sm font-medium transition-colors"
+                    className="text-gray-700 hover:text-white hover:bg-gradient-to-r hover:from-purple-600 hover:to-blue-600 duration-500 lg:px-3 px-2 py-2 rounded-md text-sm font-medium transform transition-colors"
                   >
                     Sign In
                   </Link>
                   <Link
                     href="/sign-up"
-                    className="bg-gradient-to-r from-purple-600 to-blue-600 text-white px-4 py-2 rounded-md text-sm font-medium hover:from-purple-700 hover:to-blue-700 transition-all transform hover:scale-105"
+                    className="bg-gradient-to-r from-purple-600 to-blue-600 text-white lg:px-4 px-2 py-2 rounded-md text-sm font-medium hover:from-purple-700 hover:to-blue-700 transition-all transform hover:scale-105"
                   >
                     Get Started
                   </Link>
@@ -119,15 +133,20 @@ export default function Home() {
           </nav>
 
           {/* Hero Section */}
-          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-20 pb-16">
-            <div className="text-center">
+          <motion.div 
+            initial="hidden" 
+            animate="show" 
+            variants={containerVariant}
+            className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-20 pb-16"
+          >
+            <motion.div variants={fadeInUp} className="text-center">
               <h1 className="text-5xl md:text-6xl font-bold text-gray-900 mb-6">
                 Your thoughts deserve a
                 <span className="bg-gradient-to-r from-purple-600 to-blue-600 bg-clip-text text-transparent">
                   {' '}beautiful home
                 </span>
               </h1>
-              <p className="text-xl text-gray-600 mb-8 max-w-3xl mx-auto">
+              <p className="text-xl text-center text-gray-600 mb-8 max-w-3xl mx-auto">
                 Capture your daily experiences, track your moods, and reflect on your journey. 
                 A private, secure space that's entirely yours.
               </p>
@@ -145,41 +164,44 @@ export default function Home() {
                   I Already Have an Account
                 </Link>
               </div>
-            </div>
+            </motion.div>
 
-            {/* Features */}
-            <div className="mt-20 grid md:grid-cols-3 gap-8">
-              <div className="bg-white/60 backdrop-blur-sm p-8 rounded-xl shadow-lg border border-gray-200">
-                <div className="w-12 h-12 bg-gradient-to-r from-purple-500 to-blue-500 rounded-lg flex items-center justify-center mb-4">
-                  <span className="text-white text-2xl">📝</span>
-                </div>
-                <h3 className="text-xl font-semibold text-gray-900 mb-3">Write Freely</h3>
-                <p className="text-gray-600">
-                  Express your thoughts without limits. Add titles, content, and track your daily moods.
-                </p>
-              </div>
-
-              <div className="bg-white/60 backdrop-blur-sm p-8 rounded-xl shadow-lg border border-gray-200">
-                <div className="w-12 h-12 bg-gradient-to-r from-purple-500 to-blue-500 rounded-lg flex items-center justify-center mb-4">
-                  <span className="text-white text-2xl">🔒</span>
-                </div>
-                <h3 className="text-xl font-semibold text-gray-900 mb-3">Completely Private</h3>
-                <p className="text-gray-600">
-                  Your entries are encrypted and only visible to you. No one else can access your thoughts.
-                </p>
-              </div>
-
-              <div className="bg-white/60 backdrop-blur-sm p-8 rounded-xl shadow-lg border border-gray-200">
-                <div className="w-12 h-12 bg-gradient-to-r from-purple-500 to-blue-500 rounded-lg flex items-center justify-center mb-4">
-                  <span className="text-white text-2xl">💙</span>
-                </div>
-                <h3 className="text-xl font-semibold text-gray-900 mb-3">Track Your Journey</h3>
-                <p className="text-gray-600">
-                  Monitor your moods, categorize entries, and see your personal growth over time.
-                </p>
-              </div>
-            </div>
-          </div>
+            {/* Features Section */}
+            <motion.div 
+              variants={containerVariant} 
+              className="mt-20 grid md:grid-cols-3 gap-8"
+            >
+              {[
+  {
+    icon: <LuPenLine className="text-white text-2xl" />,
+    title: "Write Freely",
+    description: "Express your thoughts without limits. Add titles, content, and track your daily moods.",
+  },
+  {
+    icon: <LuLock className="text-white text-2xl" />,
+    title: "Completely Private",
+    description: "Your entries are encrypted and only visible to you. No one else can access your thoughts.",
+  },
+  {
+    icon: <LuTrendingUp className="text-white text-2xl" />,
+    title: "Track Your Journey",
+    description: "Monitor your moods, categorize entries, and see your personal growth over time.",
+  },
+].map(({ icon, title, description }, idx) => (
+                <motion.div
+                  key={idx}
+                  variants={fadeInUp}
+                  className="bg-white/60 backdrop-blur-sm p-8 rounded-xl shadow-lg border border-gray-200"
+                >
+                  <div className="w-12 h-12 bg-gradient-to-r from-purple-500 to-blue-500 rounded-lg flex items-center justify-center mb-4">
+                    {icon}
+                  </div>
+                  <h3 className="text-xl font-semibold text-gray-900 mb-3">{title}</h3>
+                  <p className="text-gray-600">{description}</p>
+                </motion.div>
+              ))}
+            </motion.div>
+          </motion.div>
         </div>
       </SignedOut>
 
@@ -199,42 +221,69 @@ export default function Home() {
           </nav>
 
           <main className="max-w-4xl mx-auto p-6">
-            {successMessage && (
-              <div className="bg-green-50 border border-green-200 text-green-800 px-4 py-3 rounded-lg mb-6">
-                {successMessage}
-              </div>
-            )}
-            {error && (
-              <div className="bg-red-50 border border-red-200 text-red-800 px-4 py-3 rounded-lg mb-6">
-                {error}
-              </div>
-            )}
-            
-            <EntryForm onSubmit={handleSubmit} editingEntry={editingEntry} />
-            
-            {loading ? (
-              <div className="text-center py-8">
-                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-purple-600 mx-auto"></div>
-                <p className="text-gray-600 mt-2">Loading your entries...</p>
-              </div>
-            ) : (
-              <div className="space-y-6 mt-8">
-                {entries.length === 0 ? (
-                  <div className="text-center py-12 bg-white rounded-lg shadow-sm">
-                    <p className="text-gray-600 text-lg">No entries yet. Start writing your first entry above!</p>
-                  </div>
-                ) : (
-                  entries.map((entry) => (
-                    <EntryCard
-                      key={entry._id}
-                      entry={entry}
-                      onEdit={() => setEditingEntry(entry)}
-                      onDelete={() => handleDelete(entry._id)}
-                    />
-                  ))
-                )}
-              </div>
-            )}
+            <AnimatePresence>
+              {successMessage && (
+                <motion.div
+                  initial={{ opacity: 0, y: -10 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  exit={{ opacity: 0, y: -10 }}
+                  className="bg-green-50 border border-green-200 text-green-800 px-4 py-3 rounded-lg mb-6"
+                >
+                  {successMessage}
+                </motion.div>
+              )}
+              {error && (
+                <motion.div
+                  initial={{ opacity: 0, y: -10 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  exit={{ opacity: 0, y: -10 }}
+                  className="bg-red-50 border border-red-200 text-red-800 px-4 py-3 rounded-lg mb-6"
+                >
+                  {error}
+                </motion.div>
+              )}
+            </AnimatePresence>
+
+            <motion.div initial="hidden" animate="show" variants={containerVariant}>
+              <motion.div variants={fadeInUp}>
+                <EntryForm onSubmit={handleSubmit} editingEntry={editingEntry} />
+              </motion.div>
+
+              {loading ? (
+                <div className="text-center py-8">
+                  <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-purple-600 mx-auto"></div>
+                  <p className="text-gray-600 mt-2">Loading your entries...</p>
+                </div>
+              ) : (
+                <motion.div className="space-y-6 mt-8">
+                  {entries.length === 0 ? (
+                    <motion.div
+                      initial={{ opacity: 0 }}
+                      animate={{ opacity: 1 }}
+                      transition={{ delay: 0.3 }}
+                      className="text-center py-12 bg-white rounded-lg shadow-sm"
+                    >
+                      <p className="text-gray-600 text-lg">No entries yet. Start writing your first entry above!</p>
+                    </motion.div>
+                  ) : (
+                    entries.map((entry) => (
+                      <motion.div
+                        key={entry._id}
+                        variants={fadeInUp}
+                        initial="hidden"
+                        animate="show"
+                      >
+                        <EntryCard
+                          entry={entry}
+                          onEdit={() => setEditingEntry(entry)}
+                          onDelete={() => handleDelete(entry._id)}
+                        />
+                      </motion.div>
+                    ))
+                  )}
+                </motion.div>
+              )}
+            </motion.div>
           </main>
         </div>
       </SignedIn>
