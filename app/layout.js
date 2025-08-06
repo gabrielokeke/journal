@@ -14,7 +14,7 @@ const geistMono = Geist_Mono({
 
 export const metadata = {
   title: 'Thotbox',
-  description: 'Create and manage your personal journal entries',
+  description: 'Your daily dose of clarity, one thought at a time.',
 }
 
 export default function RootLayout({ children }) {
