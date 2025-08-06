@@ -1,7 +1,7 @@
 export default function EntryCard({ entry, onEdit, onDelete }) {
   const moodEmojis = {
     1: "😢",
-    2: "😕",
+    2: "😞",
     3: "😐",
     4: "😊",
     5: "🎉",
