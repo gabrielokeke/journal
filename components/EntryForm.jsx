@@ -13,7 +13,7 @@ const categories = [
 
 const moodLabels = {
   1: "😢 Very Low",
-  2: "😕 Low",
+  2: "😞 Low",
   3: "😐 Neutral",
   4: "😊 Good",
   5: "🎉 Excellent",
