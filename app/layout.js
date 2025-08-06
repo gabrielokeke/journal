@@ -13,7 +13,7 @@ const geistMono = Geist_Mono({
 })
 
 export const metadata = {
-  title: 'MindLoom',
+  title: 'Pensevia',
   description: 'Your daily dose of clarity, one thought at a time.',
 }
 
