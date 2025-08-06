@@ -113,7 +113,7 @@ export default function EntryForm({ onSubmit, editingEntry }) {
 
       <button
         type="submit"
-        className="w-full bg-blue-600 hover:bg-blue-700 text-white py-3 rounded-md font-semibold transition"
+        className="w-full bg-gradient-to-r from-purple-600 to-blue-600 text-white py-3 rounded-md font-semibold "
       >
         {editingEntry ? "Update Entry" : "Add Entry"}
       </button>
