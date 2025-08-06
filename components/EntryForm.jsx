@@ -1,5 +1,6 @@
 "use client"
-import { useState, useEffect } from "react"
+import { useState, useEffect, useRef } from "react"
+import { LuUpload, LuX, LuImage } from 'react-icons/lu'
 
 const categories = [
   "Work",
@@ -24,6 +25,10 @@ export default function EntryForm({ onSubmit, editingEntry }) {
   const [content, setContent] = useState("")
   const [category, setCategory] = useState("Personal")
   const [mood, setMood] = useState(3)
+  const [image, setImage] = useState("")
+  const [imagePreview, setImagePreview] = useState("")
+  const [uploading, setUploading] = useState(false)
+  const fileInputRef = useRef(null)
 
   useEffect(() => {
     if (editingEntry) {
@@ -31,21 +36,74 @@ export default function EntryForm({ onSubmit, editingEntry }) {
       setContent(editingEntry.content || "")
       setCategory(editingEntry.category || "Personal")
       setMood(editingEntry.mood || 3)
+      setImage(editingEntry.image || "")
+      setImagePreview(editingEntry.image || "")
     } else {
       setTitle("")
       setContent("")
       setCategory("Personal")
       setMood(3)
+      setImage("")
+      setImagePreview("")
     }
   }, [editingEntry])
 
+  const handleImageUpload = (e) => {
+    const file = e.target.files[0]
+    if (!file) return
+
+    // Check file size (max 5MB)
+    if (file.size > 5 * 1024 * 1024) {
+      alert('Image size should be less than 5MB')
+      return
+    }
+
+    // Check file type
+    if (!file.type.startsWith('image/')) {
+      alert('Please select an image file')
+      return
+    }
+
+    setUploading(true)
+    const reader = new FileReader()
+    
+    reader.onload = (e) => {
+      const base64 = e.target.result
+      setImage(base64)
+      setImagePreview(base64)
+      setUploading(false)
+    }
+    
+    reader.onerror = () => {
+      alert('Error reading file')
+      setUploading(false)
+    }
+    
+    reader.readAsDataURL(file)
+  }
+
+  const removeImage = () => {
+    setImage("")
+    setImagePreview("")
+    if (fileInputRef.current) {
+      fileInputRef.current.value = ""
+    }
+  }
+
   const handleSubmit = (e) => {
     e.preventDefault()
-    onSubmit({ title, content, category, mood })
+    onSubmit({ title, content, category, mood, image })
+    
+    // Reset form
     setTitle("")
     setContent("")
     setCategory("Personal")
     setMood(3)
+    setImage("")
+    setImagePreview("")
+    if (fileInputRef.current) {
+      fileInputRef.current.value = ""
+    }
   }
 
   return (
@@ -76,6 +134,60 @@ export default function EntryForm({ onSubmit, editingEntry }) {
         required
         maxLength={1000}
       />
+
+      {/* Image Upload Section */}
+      <div className="mb-4">
+        <label className="block mb-2 font-medium text-gray-700">
+          Add Image (optional)
+        </label>
+        
+        {!imagePreview ? (
+          <div className="relative">
+            <input
+              ref={fileInputRef}
+              type="file"
+              accept="image/*"
+              onChange={handleImageUpload}
+              className="hidden"
+              id="image-upload"
+            />
+            <label
+              htmlFor="image-upload"
+              className="flex flex-col items-center justify-center w-full h-32 border-2 border-gray-300 border-dashed rounded-lg cursor-pointer bg-gray-50 hover:bg-gray-100 transition-colors"
+            >
+              {uploading ? (
+                <div className="flex items-center space-x-2">
+                  <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-purple-600"></div>
+                  <span className="text-gray-600">Uploading...</span>
+                </div>
+              ) : (
+                <div className="flex flex-col items-center justify-center pt-5 pb-6">
+                  <LuUpload className="w-8 h-8 mb-2 text-gray-400" />
+                  <p className="mb-2 text-sm text-gray-500">
+                    <span className="font-semibold">Click to upload</span> an image
+                  </p>
+                  <p className="text-xs text-gray-500">PNG, JPG, GIF up to 5MB</p>
+                </div>
+              )}
+            </label>
+          </div>
+        ) : (
+          <div className="relative">
+            <img
+              src={imagePreview}
+              alt="Preview"
+              className="w-full h-32 object-cover rounded-lg border"
+            />
+            <button
+              type="button"
+              onClick={removeImage}
+              className="absolute top-2 right-2 bg-red-500 hover:bg-red-600 text-white rounded-full p-1 transition-colors"
+            >
+              <LuX className="w-4 h-4" />
+            </button>
+          </div>
+        )}
+      </div>
 
       <div className="flex flex-wrap gap-4 mb-4">
         <div className="flex flex-col flex-1">
@@ -113,9 +225,10 @@ export default function EntryForm({ onSubmit, editingEntry }) {
 
       <button
         type="submit"
-        className="w-full bg-gradient-to-r from-purple-600 to-blue-600 text-white py-3 rounded-md font-semibold "
+        disabled={uploading}
+        className="w-full bg-gradient-to-r from-purple-600 to-blue-600 text-white py-3 rounded-md font-semibold disabled:opacity-50 disabled:cursor-not-allowed transition-opacity"
       >
-        {editingEntry ? "Update Entry" : "Add Entry"}
+        {uploading ? "Processing..." : editingEntry ? "Update Entry" : "Add Entry"}
       </button>
     </form>
   )

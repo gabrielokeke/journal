@@ -17,38 +17,86 @@ export default function EntryCard({ entry, onEdit, onDelete }) {
     Other: "bg-gray-100 text-gray-800",
   }
 
+  const formatDate = (dateString) => {
+    return new Date(dateString).toLocaleDateString('en-US', {
+      year: 'numeric',
+      month: 'short',
+      day: 'numeric',
+      hour: '2-digit',
+      minute: '2-digit'
+    })
+  }
+
   return (
-    <div className="bg-white p-5 rounded-lg shadow-md mb-4 hover:shadow-lg transition">
-      <h2 className="text-2xl font-semibold text-gray-900">{entry.title}</h2>
-      <p className="mt-2 text-gray-700">{entry.content}</p>
+    <div className="bg-white rounded-lg shadow-md mb-4 hover:shadow-lg transition-shadow overflow-hidden">
+      {/* Image section - only show if image exists */}
+      {entry.image && (
+        <div className="relative h-48 w-full">
+          <img
+            src={entry.image}
+            alt={entry.title}
+            className="w-full h-full object-cover"
+            onError={(e) => {
+              // Hide image if it fails to load
+              e.target.parentElement.style.display = 'none'
+            }}
+          />
+          {/* Optional gradient overlay for better text readability */}
+          <div className="absolute inset-0 bg-gradient-to-t from-black/20 to-transparent"></div>
+        </div>
+      )}
+      
+      {/* Content section */}
+      <div className="p-5">
+        <div className="flex justify-between items-start mb-2">
+          <h2 className="text-2xl font-semibold text-gray-900 flex-1">{entry.title}</h2>
+          <span className="text-sm text-gray-500 ml-4 whitespace-nowrap">
+            {formatDate(entry.createdAt)}
+          </span>
+        </div>
+        
+        <p className="mt-2 text-gray-700 leading-relaxed">{entry.content}</p>
 
-      <div className="flex items-center mt-4 space-x-4">
-        <span
-          className={`px-3 py-1 rounded-full text-sm font-semibold ${
-            categoryColors[entry.category] || categoryColors.Other
-          }`}
-        >
-          {entry.category}
-        </span>
+        <div className="flex items-center mt-4 space-x-4">
+          <span
+            className={`px-3 py-1 rounded-full text-sm font-semibold ${
+              categoryColors[entry.category] || categoryColors.Other
+            }`}
+          >
+            {entry.category}
+          </span>
 
-        <span className="flex items-center gap-1 text-sm text-gray-700">
-          Mood: <span className="text-lg">{moodEmojis[entry.mood] || "😐"}</span>
-        </span>
-      </div>
+          <span className="flex items-center gap-1 text-sm text-gray-700">
+            Mood: <span className="text-lg">{moodEmojis[entry.mood] || "😐"}</span>
+          </span>
+        </div>
 
-      <div className="mt-4 space-x-3">
-        <button
-          onClick={onEdit}
-          className="text-blue-600 hover:text-blue-800 font-semibold"
-        >
-          Edit
-        </button>
-        <button
-          onClick={onDelete}
-          className="text-red-600 hover:text-red-800 font-semibold"
-        >
-          Delete
-        </button>
+        <div className="mt-4 flex justify-between items-center">
+          <div className="space-x-3">
+            <button
+              onClick={onEdit}
+              className="text-blue-600 hover:text-blue-800 font-semibold transition-colors"
+            >
+              Edit
+            </button>
+            <button
+              onClick={onDelete}
+              className="text-red-600 hover:text-red-800 font-semibold transition-colors"
+            >
+              Delete
+            </button>
+          </div>
+          
+          {/* Show image indicator if there's an image */}
+          {entry.image && (
+            <div className="flex items-center text-gray-400">
+              <svg className="w-4 h-4 mr-1" fill="currentColor" viewBox="0 0 20 20">
+                <path fillRule="evenodd" d="M4 3a2 2 0 00-2 2v10a2 2 0 002 2h12a2 2 0 002-2V5a2 2 0 00-2-2H4zm12 12H4l4-8 3 6 2-4 3 6z" clipRule="evenodd" />
+              </svg>
+              <span className="text-xs">Image</span>
+            </div>
+          )}
+        </div>
       </div>
     </div>
   )
