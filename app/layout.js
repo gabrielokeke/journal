@@ -13,7 +13,7 @@ const geistMono = Geist_Mono({
 })
 
 export const metadata = {
-  title: 'My Journal',
+  title: 'Thotbox',
   description: 'Create and manage your personal journal entries',
 }
 
