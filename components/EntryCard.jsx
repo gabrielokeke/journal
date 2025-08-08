@@ -31,28 +31,25 @@ export default function EntryCard({ entry, onEdit, onDelete }) {
     <div className="bg-white rounded-lg shadow-md mb-4 hover:shadow-lg transition-shadow overflow-hidden">
       {/* Image section - only show if image exists */}
       {entry.image && (
-        <div className="relative h-48 w-full">
+        <div className="relative w-full">
           <img
             src={entry.image}
             alt={entry.title}
-            className="w-full h-full object-cover"
+            className="w-full h-auto object-contain max-h-96"
             onError={(e) => {
               // Hide image if it fails to load
               e.target.parentElement.style.display = 'none'
             }}
           />
           {/* Optional gradient overlay for better text readability */}
-          <div className="absolute inset-0 bg-gradient-to-t from-black/20 to-transparent"></div>
+          <div className="absolute inset-0 bg-gradient-to-t from-black/10 to-transparent"></div>
         </div>
       )}
       
       {/* Content section */}
       <div className="p-5">
-        <div className="flex justify-between items-start mb-2">
-          <h2 className="text-2xl font-semibold text-gray-900 flex-1">{entry.title}</h2>
-          <span className="text-sm text-gray-500 ml-4 whitespace-nowrap">
-            {formatDate(entry.createdAt)}
-          </span>
+        <div className="mb-2">
+          <h2 className="text-2xl font-semibold text-gray-900">{entry.title}</h2>
         </div>
         
         <p className="mt-2 text-gray-700 leading-relaxed">{entry.content}</p>
@@ -71,17 +68,17 @@ export default function EntryCard({ entry, onEdit, onDelete }) {
           </span>
         </div>
 
-        <div className="mt-4 flex justify-between items-center">
+        <div className="mt-4 flex justify-between items-center pt-4">
           <div className="space-x-3">
             <button
               onClick={onEdit}
-              className="text-blue-600 hover:text-blue-800 font-semibold transition-colors"
+              className="text-blue-600 cursor-pointer hover:text-blue-800 font-semibold transition-colors"
             >
               Edit
             </button>
             <button
               onClick={onDelete}
-              className="text-red-600 hover:text-red-800 font-semibold transition-colors"
+              className="text-red-600 cursor-pointer hover:text-red-800 font-semibold transition-colors"
             >
               Delete
             </button>
@@ -96,6 +93,13 @@ export default function EntryCard({ entry, onEdit, onDelete }) {
               <span className="text-xs">Image</span>
             </div>
           )}
+        </div>
+
+        {/* Date at the bottom */}
+        <div className="mt-3 pt-3 border-t border-gray-100">
+          <span className="text-sm text-gray-500">
+            {formatDate(entry.createdAt)}
+          </span>
         </div>
       </div>
     </div>

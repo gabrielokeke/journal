@@ -10,10 +10,14 @@ import {
   LuFileText, 
   LuTrendingUp,
   LuArrowLeft,
+  LuAward,
+  LuFlame,
+  LuDownload
 } from 'react-icons/lu'
 import {FaEdit} from 'react-icons/fa'
 import Link from 'next/link'
 import CustomUserProfile from '../../components/CustomUserProfile'
+import ProfileEditModal from '../../components/ProfileEditModal'
 
 const containerVariant = {
   hidden: { opacity: 0 },
@@ -28,26 +32,81 @@ const fadeInUp = {
   show: { opacity: 1, y: 0, transition: { duration: 0.5, ease: 'easeOut' } },
 }
 
+const themes = {
+  purple: 'from-purple-600 to-blue-600',
+  blue: 'from-blue-600 to-cyan-600',
+  green: 'from-green-600 to-emerald-600',
+  pink: 'from-pink-600 to-rose-600',
+  orange: 'from-orange-600 to-red-600',
+  dark: 'from-gray-800 to-gray-900'
+}
+
+const achievementNames = {
+  first_entry: 'First Entry',
+  ten_entries: '10 Entries',
+  fifty_entries: '50 Entries',
+  hundred_entries: '100 Entries',
+  week_streak: '7-Day Streak',
+  month_streak: '30-Day Streak'
+}
+
 export default function ProfilePage() {
   const { user } = useUser()
   const [entries, setEntries] = useState([])
+  const [profile, setProfile] = useState(null)
   const [loading, setLoading] = useState(true)
+  const [isEditModalOpen, setIsEditModalOpen] = useState(false)
 
   useEffect(() => {
-    fetchUserStats()
+    fetchUserData()
   }, [])
 
-  const fetchUserStats = async () => {
+  const fetchUserData = async () => {
     try {
-      const response = await fetch('/api/entries')
-      const data = await response.json()
-      if (data.success) {
-        setEntries(data.data)
+      setLoading(true)
+      
+      // Fetch entries and profile data
+      const [entriesResponse, profileResponse] = await Promise.all([
+        fetch('/api/entries'),
+        fetch('/api/user/profile')
+      ])
+      
+      const entriesData = await entriesResponse.json()
+      const profileData = await profileResponse.json()
+      
+      if (entriesData.success) {
+        setEntries(entriesData.data)
+      }
+      
+      if (profileData.success) {
+        setProfile(profileData.data)
       }
     } catch (err) {
-      console.error('Failed to fetch user stats:', err)
+      console.error('Failed to fetch user data:', err)
     } finally {
       setLoading(false)
+    }
+  }
+
+  const handleProfileSave = (updatedProfile) => {
+    setProfile(updatedProfile)
+  }
+
+  const exportData = async () => {
+    try {
+      const response = await fetch('/api/user/export')
+      const blob = await response.blob()
+      const url = window.URL.createObjectURL(blob)
+      const a = document.createElement('a')
+      a.style.display = 'none'
+      a.href = url
+      a.download = `journal-entries-${new Date().toISOString().split('T')[0]}.json`
+      document.body.appendChild(a)
+      a.click()
+      window.URL.revokeObjectURL(url)
+    } catch (error) {
+      console.error('Export failed:', error)
+      alert('Failed to export data')
     }
   }
 
@@ -80,6 +139,9 @@ export default function ProfilePage() {
 
   const moodEmojis = { 1: '😢', 2: '😞', 3: '😐', 4: '😊', 5: '🎉' }
 
+  const currentTheme = profile?.theme || 'purple'
+  const currentGradient = themes[currentTheme]
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-purple-50 via-blue-50 to-indigo-100">
       {/* Navigation */}
@@ -108,22 +170,39 @@ export default function ProfilePage() {
       >
         {/* Profile Header */}
         <motion.div variants={fadeInUp} className="bg-white rounded-2xl shadow-lg overflow-hidden mb-8">
-          <div className="bg-gradient-to-r from-purple-600 to-blue-600 px-2 lg:px-8 py-12 text-white">
+          <div className={`bg-gradient-to-r ${currentGradient} px-2 lg:px-8 py-12 text-white relative`}>
             <div className="flex items-start lg:justify-start justify-center space-x-3 lg:space-x-6">
-              <div className="lg:w-24 lg:h-24 w-11 h-11 rounded-full bg-white/20 flex items-center justify-center text-white font-bold text-2xl lg:text-3xl">
-                {user.firstName?.charAt(0) || user.emailAddresses[0]?.emailAddress.charAt(0).toUpperCase()}
+              {/* Profile Picture */}
+              <div className="lg:w-24 lg:h-24 w-16 h-16 rounded-full overflow-hidden border-4 border-white/30">
+                {profile?.profilePicture ? (
+                  <img
+                    src={profile.profilePicture}
+                    alt="Profile"
+                    className="w-full h-full object-cover"
+                  />
+                ) : (
+                  <div className="w-full h-full bg-white/20 flex items-center justify-center text-white font-bold lg:text-3xl text-xl">
+                    {profile?.username?.charAt(0) || user.firstName?.charAt(0) || user.emailAddresses[0]?.emailAddress.charAt(0).toUpperCase()}
+                  </div>
+                )}
               </div>
-              <div>
+              
+              <div className="flex-1">
                 <h1 className="lg:text-3xl text-xl font-bold mb-2">
-                  {user.firstName && user.lastName 
-                    ? `${user.firstName} ${user.lastName}`
-                    : user.firstName || 'Welcome!'
-                  }
+                  {profile?.username || user.firstName || 'Welcome!'}
+                  {profile?.username && user.firstName && (
+                    <span className="text-purple-200 text-lg ml-2">({user.firstName})</span>
+                  )}
                 </h1>
                 <p className="text-purple-100 text-sm lg:text-lg">
                   {user.emailAddresses[0]?.emailAddress}
                 </p>
-                <p className="text-purple-200 text-sm lg:text-lg mt-1">
+                {profile?.bio && (
+                  <p className="text-purple-200 text-sm lg:text-base mt-2 max-w-md">
+                    {profile.bio}
+                  </p>
+                )}
+                <p className="text-purple-200 text-sm lg:text-base mt-1">
                   Member since {memberSince}
                 </p>
               </div>
@@ -132,9 +211,9 @@ export default function ProfilePage() {
           
           {/* Quick Stats */}
           <div className="p-8">
-            <div className="grid md:grid-cols-3 gap-6">
+            <div className="grid md:grid-cols-4 gap-6">
               <div className="text-center">
-                <div className="w-16 h-16 bg-gradient-to-r from-purple-500 to-blue-500 rounded-full flex items-center justify-center mx-auto mb-3">
+                <div className={`w-16 h-16 bg-gradient-to-r ${currentGradient} rounded-full flex items-center justify-center mx-auto mb-3`}>
                   <LuFileText className="text-white text-2xl" />
                 </div>
                 <h3 className="text-2xl font-bold text-gray-900">{totalEntries}</h3>
@@ -142,7 +221,7 @@ export default function ProfilePage() {
               </div>
               
               <div className="text-center">
-                <div className="w-16 h-16 bg-gradient-to-r from-purple-500 to-blue-500 rounded-full flex items-center justify-center mx-auto mb-3">
+                <div className={`w-16 h-16 bg-gradient-to-r ${currentGradient} rounded-full flex items-center justify-center mx-auto mb-3`}>
                   <span className="text-2xl">{moodEmojis[mostCommonMood.mood]}</span>
                 </div>
                 <h3 className="text-2xl font-bold text-gray-900">Most Common</h3>
@@ -150,40 +229,86 @@ export default function ProfilePage() {
               </div>
               
               <div className="text-center">
-                <div className="w-16 h-16 bg-gradient-to-r from-purple-500 to-blue-500 rounded-full flex items-center justify-center mx-auto mb-3">
-                  <LuTrendingUp className="text-white text-2xl" />
+                <div className={`w-16 h-16 bg-gradient-to-r ${currentGradient} rounded-full flex items-center justify-center mx-auto mb-3`}>
+                  <LuFlame className="text-white text-2xl" />
                 </div>
                 <h3 className="text-2xl font-bold text-gray-900">
-                  {entries.length > 0 ? Math.ceil(entries.length / 7) : 0}
+                  {profile?.streak?.current || 0}
                 </h3>
-                <p className="text-gray-600">Entries/Week</p>
+                <p className="text-gray-600">Day Streak</p>
+              </div>
+              
+              <div className="text-center">
+                <div className={`w-16 h-16 bg-gradient-to-r ${currentGradient} rounded-full flex items-center justify-center mx-auto mb-3`}>
+                  <LuAward className="text-white text-2xl" />
+                </div>
+                <h3 className="text-2xl font-bold text-gray-900">
+                  {profile?.achievements?.length || 0}
+                </h3>
+                <p className="text-gray-600">Achievements</p>
               </div>
             </div>
           </div>
         </motion.div>
 
+        {/* Achievements Section */}
+        {profile?.achievements?.length > 0 && (
+          <motion.div variants={fadeInUp} className="bg-white rounded-2xl shadow-lg px-4 lg:px-8 py-8 mb-8">
+            <h2 className="text-2xl font-bold text-gray-900 mb-6">
+              <LuAward className="inline w-6 h-6 mr-2" />
+              Achievements
+            </h2>
+            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
+              {profile.achievements.map((achievement, index) => (
+                <div
+                  key={index}
+                  className="bg-gradient-to-br from-yellow-50 to-orange-50 border border-yellow-200 rounded-xl p-4 text-center"
+                >
+                  <div className="text-3xl mb-2">{achievement.icon}</div>
+                  <h4 className="font-semibold text-sm text-gray-900">
+                    {achievementNames[achievement.name] || achievement.name}
+                  </h4>
+                  <p className="text-xs text-gray-600 mt-1">
+                    {new Date(achievement.earnedAt).toLocaleDateString()}
+                  </p>
+                </div>
+              ))}
+            </div>
+          </motion.div>
+        )}
+
         {/* Account Information */}
         <motion.div variants={fadeInUp} className="bg-white rounded-2xl shadow-lg py-8 px-4 lg:p-8 mb-8">
           <div className="flex items-center justify-between mb-6">
-            <h2 className="lg:text-2xl font-bold text-gray-900">Account Information</h2>
-            <button className="flex items-center space-x-2 text-purple-600 hover:text-purple-700 transition-colors">
-              <FaEdit className="w-5 h-5" />
-              <span className="font-medium">Edit Profile</span>
-            </button>
+            <h2 className="lg:text-2xl text-xl font-bold text-gray-900">Account Information</h2>
+            <div className="flex space-x-3">
+              <button
+                onClick={exportData}
+                className={`flex items-center space-x-2 text-gray-600 hover:text-gray-800 transition-colors px-3 py-2 rounded-lg hover:bg-gray-50`}
+                title="Export your data"
+              >
+                <LuDownload className="w-5 h-5" />
+                <span className="font-medium hidden sm:block">Export</span>
+              </button>
+              <button
+                onClick={() => setIsEditModalOpen(true)}
+                className={`flex items-center space-x-2 bg-gradient-to-r ${currentGradient} text-white hover:opacity-90 transition-opacity px-4 py-2 rounded-lg`}
+              >
+                <FaEdit className="w-4 h-4" />
+                <span className="font-medium">Edit Profile</span>
+              </button>
+            </div>
           </div>
           
           <div className="space-y-6">
             <div className="flex items-center space-x-4">
-              <div className="w-12 h-12 bg-gray-100 rounded-full flex items-center justify-center">
-                <LuUser className="text-gray-600 text-xl" />
+              <div className={`w-12 h-12 bg-gradient-to-r ${currentGradient} rounded-full flex items-center justify-center`}>
+                <LuUser className="text-white text-xl" />
               </div>
               <div>
-                <p className="text-gray-600 text-sm">Full Name</p>
+                <p className="text-gray-600 text-sm">Display Name</p>
                 <p className="text-gray-900 font-medium">
-                  {user.firstName && user.lastName 
-                    ? `${user.firstName} ${user.lastName}`
-                    : user.firstName || 'Not provided'
-                  }
+                  {profile?.username || user.firstName || 'Not set'}
                 </p>
               </div>
             </div>
@@ -194,7 +319,7 @@ export default function ProfilePage() {
               </div>
               <div>
                 <p className="text-gray-600 text-sm">Email Address</p>
-                <p className="text-gray-900 text-[12px] lg:text-lg font-medium">{user.emailAddresses[0]?.emailAddress}</p>
+                <p className="text-gray-900 text-[12px] lg:text-base font-medium">{user.emailAddresses[0]?.emailAddress}</p>
               </div>
             </div>
             
@@ -207,6 +332,18 @@ export default function ProfilePage() {
                 <p className="text-gray-900 font-medium">{memberSince}</p>
               </div>
             </div>
+
+            {profile?.bio && (
+              <div className="flex items-start space-x-4">
+                <div className="w-12 h-12 bg-gray-100 rounded-full flex items-center justify-center mt-1">
+                  <LuUser className="text-gray-600 text-xl" />
+                </div>
+                <div>
+                  <p className="text-gray-600 text-sm">Bio</p>
+                  <p className="text-gray-900 font-medium">{profile.bio}</p>
+                </div>
+              </div>
+            )}
           </div>
         </motion.div>
 
@@ -234,9 +371,16 @@ export default function ProfilePage() {
                       })}
                     </p>
                   </div>
-                  <span className="text-xs bg-purple-100 text-purple-600 px-2 py-1 rounded-full">
-                    {entry.category}
-                  </span>
+                  <div className="flex items-center space-x-2">
+                    {entry.image && (
+                      <div className="w-8 h-8 rounded bg-gray-200 overflow-hidden">
+                        <img src={entry.image} alt="" className="w-full h-full object-cover" />
+                      </div>
+                    )}
+                    <span className="text-xs bg-purple-100 text-purple-600 px-2 py-1 rounded-full">
+                      {entry.category}
+                    </span>
+                  </div>
                 </div>
               ))}
               
@@ -257,7 +401,7 @@ export default function ProfilePage() {
               <p>No entries yet. Start journaling to see your activity here!</p>
               <Link 
                 href="/"
-                className="inline-block mt-4 bg-gradient-to-r from-purple-600 to-blue-600 text-white px-6 py-2 rounded-lg font-medium hover:from-purple-700 hover:to-blue-700 transition-all"
+                className={`inline-block mt-4 bg-gradient-to-r ${currentGradient} text-white px-6 py-2 rounded-lg font-medium hover:opacity-90 transition-opacity`}
               >
                 Create Your First Entry
               </Link>
@@ -265,6 +409,12 @@ export default function ProfilePage() {
           )}
         </motion.div>
       </motion.div>
+
+      {/* Profile Edit Modal */}
+      <ProfileEditModal 
+        isOpen={isEditModalOpen}
+        onClose={() => setIsEditModalOpen(false)}
+        onSave={handleProfileSave}
+      />
     </div>
-  )
-}
+  )}
