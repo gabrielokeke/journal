@@ -1,3 +1,4 @@
+//component/EntryCard.jsx
 export default function EntryCard({ entry, onEdit, onDelete }) {
   const moodEmojis = {
     1: "😢",
