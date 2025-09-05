@@ -1,9 +1,12 @@
+/* app/globals.css */
 @import url('https://fonts.googleapis.com/css2?family=Poppins:wght@100;200;300;400;500;600;700;800;900&display=swap');
 @import "tailwindcss";
 
 :root {
   --background: #ffffff;
   --foreground: #171717;
+  --geist-foreground: #000000;
+  --geist-background: #ffffff;
 }
 
 @theme inline {
@@ -17,11 +20,148 @@
   :root {
     --background: #0a0a0a;
     --foreground: #ededed;
+    --geist-foreground: #ffffff;
+    --geist-background: #000000;
   }
+}
+
+html {
+  color-scheme: light dark;
 }
 
 body {
   background: var(--background);
   color: var(--foreground);
   font-family: 'Poppins', sans-serif;
+}
+
+/* Smooth transitions for theme switching */
+* {
+  transition: background-color 0.2s ease, border-color 0.2s ease, color 0.2s ease;
+}
+
+/* Custom scrollbar styling */
+::-webkit-scrollbar {
+  width: 0.75rem;
+}
+
+::-webkit-scrollbar-track {
+  background-color: #f3f4f6;
+}
+
+@media (prefers-color-scheme: dark) {
+  ::-webkit-scrollbar-track {
+    background-color: #1f2937;
+  }
+}
+
+::-webkit-scrollbar-thumb {
+  background-color: #d1d5db;
+  border-radius: 9999px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background-color: #9ca3af;
+}
+
+@media (prefers-color-scheme: dark) {
+  ::-webkit-scrollbar-thumb {
+    background-color: #4b5563;
+  }
+  
+  ::-webkit-scrollbar-thumb:hover {
+    background-color: #6b7280;
+  }
+}
+
+/* Form inputs styling for dark mode */
+input[type="text"],
+input[type="email"],
+input[type="password"],
+input[type="time"],
+textarea,
+select {
+  color: inherit;
+  background-color: inherit;
+  border-color: inherit;
+}
+
+@media (prefers-color-scheme: dark) {
+  input[type="text"],
+  input[type="email"],
+  input[type="password"],
+  input[type="time"],
+  textarea,
+  select {
+    color: white;
+    background-color: #374151;
+    border-color: #4b5563;
+  }
+}
+
+input[type="text"]:focus,
+input[type="email"]:focus,
+input[type="password"]:focus,
+input[type="time"]:focus,
+textarea:focus,
+select:focus {
+  outline: 2px solid transparent;
+  outline-offset: 2px;
+}
+
+@media (prefers-color-scheme: dark) {
+  input[type="text"]:focus,
+  input[type="email"]:focus,
+  input[type="password"]:focus,
+  input[type="time"]:focus,
+  textarea:focus,
+  select:focus {
+    --tw-ring-color: #8b5cf6;
+    border-color: #8b5cf6;
+    box-shadow: 0 0 0 1px #8b5cf6;
+  }
+}
+
+option {
+  color: inherit;
+  background-color: inherit;
+}
+
+@media (prefers-color-scheme: dark) {
+  option {
+    background-color: #374151;
+    color: white;
+  }
+}
+
+/* Loading spinner animation */
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+.animate-spin {
+  animation: spin 1s linear infinite;
+}
+
+/* Gradient text utility */
+.text-gradient {
+  background-image: linear-gradient(to right, #9333ea, #2563eb);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+}
+
+/* Backdrop blur fallback */
+@supports not (backdrop-filter: blur(10px)) {
+  .backdrop-blur-sm {
+    background-color: rgba(255, 255, 255, 0.8);
+  }
+  
+  @media (prefers-color-scheme: dark) {
+    .backdrop-blur-sm {
+      background-color: rgba(17, 24, 39, 0.8);
+    }
+  }
 }
