@@ -9,13 +9,13 @@ export default function EntryCard({ entry, onEdit, onDelete }) {
   }
 
   const categoryColors = {
-    Work: "bg-blue-100 text-blue-800",
-    Personal: "bg-green-100 text-green-800",
-    Health: "bg-red-100 text-red-800",
-    Learning: "bg-purple-100 text-purple-800",
-    Creative: "bg-pink-100 text-pink-800",
-    Social: "bg-yellow-100 text-yellow-800",
-    Other: "bg-gray-100 text-gray-800",
+    Work: "bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-400",
+    Personal: "bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400",
+    Health: "bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-400",
+    Learning: "bg-purple-100 text-purple-800 dark:bg-purple-900/30 dark:text-purple-400",
+    Creative: "bg-pink-100 text-pink-800 dark:bg-pink-900/30 dark:text-pink-400",
+    Social: "bg-yellow-100 text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-400",
+    Other: "bg-gray-100 text-gray-800 dark:bg-gray-700/30 dark:text-gray-400",
   }
 
   const formatDate = (dateString) => {
@@ -29,7 +29,7 @@ export default function EntryCard({ entry, onEdit, onDelete }) {
   }
 
   return (
-    <div className="bg-white rounded-lg shadow-md mb-4 hover:shadow-lg transition-shadow overflow-hidden">
+    <div className="bg-white dark:bg-gray-800 rounded-lg shadow-md mb-4 hover:shadow-lg transition-shadow overflow-hidden">
       {/* Image section - only show if image exists */}
       {entry.image && (
         <div className="relative w-full">
@@ -50,10 +50,10 @@ export default function EntryCard({ entry, onEdit, onDelete }) {
       {/* Content section */}
       <div className="p-5">
         <div className="mb-2">
-          <h2 className="text-2xl font-semibold text-gray-900">{entry.title}</h2>
+          <h2 className="text-2xl font-semibold text-gray-900 dark:text-white">{entry.title}</h2>
         </div>
         
-        <p className="mt-2 text-gray-700 leading-relaxed">{entry.content}</p>
+        <p className="mt-2 text-gray-700 dark:text-gray-300 leading-relaxed">{entry.content}</p>
 
         <div className="flex items-center mt-4 space-x-4">
           <span
@@ -64,7 +64,7 @@ export default function EntryCard({ entry, onEdit, onDelete }) {
             {entry.category}
           </span>
 
-          <span className="flex items-center gap-1 text-sm text-gray-700">
+          <span className="flex items-center gap-1 text-sm text-gray-700 dark:text-gray-300">
             Mood: <span className="text-lg">{moodEmojis[entry.mood] || "😐"}</span>
           </span>
         </div>
@@ -73,13 +73,13 @@ export default function EntryCard({ entry, onEdit, onDelete }) {
           <div className="space-x-3">
             <button
               onClick={onEdit}
-              className="text-blue-600 cursor-pointer hover:text-blue-800 font-semibold transition-colors"
+              className="text-blue-600 dark:text-blue-400 cursor-pointer hover:text-blue-800 dark:hover:text-blue-300 font-semibold transition-colors"
             >
               Edit
             </button>
             <button
               onClick={onDelete}
-              className="text-red-600 cursor-pointer hover:text-red-800 font-semibold transition-colors"
+              className="text-red-600 dark:text-red-400 cursor-pointer hover:text-red-800 dark:hover:text-red-300 font-semibold transition-colors"
             >
               Delete
             </button>
@@ -87,7 +87,7 @@ export default function EntryCard({ entry, onEdit, onDelete }) {
           
           {/* Show image indicator if there's an image */}
           {entry.image && (
-            <div className="flex items-center text-gray-400">
+            <div className="flex items-center text-gray-400 dark:text-gray-500">
               <svg className="w-4 h-4 mr-1" fill="currentColor" viewBox="0 0 20 20">
                 <path fillRule="evenodd" d="M4 3a2 2 0 00-2 2v10a2 2 0 002 2h12a2 2 0 002-2V5a2 2 0 00-2-2H4zm12 12H4l4-8 3 6 2-4 3 6z" clipRule="evenodd" />
               </svg>
@@ -97,8 +97,8 @@ export default function EntryCard({ entry, onEdit, onDelete }) {
         </div>
 
         {/* Date at the bottom */}
-        <div className="mt-3 pt-3 border-t border-gray-100">
-          <span className="text-sm text-gray-500">
+        <div className="mt-3 pt-3 border-t border-gray-100 dark:border-gray-700">
+          <span className="text-sm text-gray-500 dark:text-gray-400">
             {formatDate(entry.createdAt)}
           </span>
         </div>

@@ -1,6 +1,6 @@
 import { ClerkProvider } from '@clerk/nextjs'
 import { Geist, Geist_Mono } from 'next/font/google'
-import { ThemeProvider } from './provider/ThemeProvider'
+import { ThemeProvider } from './providers/ThemeProvider'
 import './globals.css'
 
 const geistSans = Geist({
@@ -16,7 +16,11 @@ const geistMono = Geist_Mono({
 export const metadata = {
   title: 'Daily Journal - Your Personal Space',
   description: 'Your daily dose of clarity, one thought at a time.',
-  viewport: 'width=device-width, initial-scale=1',
+}
+
+export const viewport = {
+  width: 'device-width',
+  initialScale: 1,
   themeColor: [
     { media: '(prefers-color-scheme: light)', color: '#8b5cf6' },
     { media: '(prefers-color-scheme: dark)', color: '#1f2937' }
