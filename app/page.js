@@ -9,7 +9,6 @@ import { LuPenLine, LuLock, LuTrendingUp } from 'react-icons/lu'
 import CustomUserProfile from '../components/CustomUserProfile'
 import EntryForm from '../components/EntryForm'
 import EntryCard from '../components/EntryCard'
-import ThemeToggle from '../components/ThemeToggle'
 
 const containerVariant = {
   hidden: { opacity: 0 },
@@ -106,9 +105,9 @@ export default function Home() {
 
       {/* Landing page for non-authenticated users */}
       <SignedOut>
-        <div className="min-h-screen bg-gradient-to-br from-purple-50 via-blue-50 to-indigo-100 dark:from-gray-900 dark:via-gray-800 dark:to-gray-900">
+        <div className="min-h-screen bg-gradient-to-br from-purple-50 via-blue-50 to-indigo-100">
           {/* Navigation */}
-          <nav className="bg-white/80 dark:bg-gray-900/80 backdrop-blur-sm border-b border-gray-200 dark:border-gray-700">
+          <nav className="bg-white/80 backdrop-blur-sm border-b border-gray-200">
             <div className="max-w-7xl mx-auto px-3 sm:px-6 lg:px-8">
               <div className="flex justify-between items-center py-4">
                 <div className="flex items-center">
@@ -117,10 +116,9 @@ export default function Home() {
                   </h1>
                 </div>
                 <div className="flex items-center space-x-3 lg:space-x-4">
-                  <ThemeToggle />
                   <Link
                     href="/sign-in"
-                    className="text-gray-700 dark:text-gray-300 hover:text-white hover:bg-gradient-to-r hover:from-purple-600 hover:to-blue-600 duration-500 lg:px-3 px-2 py-2 rounded-md text-sm font-medium transform transition-colors"
+                    className="text-gray-700 hover:text-white hover:bg-gradient-to-r hover:from-purple-600 hover:to-blue-600 duration-500 lg:px-3 px-2 py-2 rounded-md text-sm font-medium transform transition-colors"
                   >
                     Sign In
                   </Link>
@@ -143,13 +141,13 @@ export default function Home() {
             className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-20 pb-16"
           >
             <motion.div variants={fadeInUp} className="text-center">
-              <h1 className="text-5xl md:text-6xl font-bold text-gray-900 dark:text-white mb-6">
+              <h1 className="text-5xl md:text-6xl font-bold text-gray-900 mb-6">
                 Your thoughts deserve a
                 <span className="bg-gradient-to-r from-purple-600 to-blue-600 bg-clip-text text-transparent">
                   {' '}beautiful home
                 </span>
               </h1>
-              <p className="text-xl text-center text-gray-600 dark:text-gray-300 mb-8 max-w-3xl mx-auto">
+              <p className="text-xl text-center text-gray-600 mb-8 max-w-3xl mx-auto">
                 Capture your daily experiences, track your moods, and reflect on your journey. 
                 A private, secure space that's entirely yours.
               </p>
@@ -162,7 +160,7 @@ export default function Home() {
                 </Link>
                 <Link
                   href="/sign-in"
-                  className="border-2 border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 px-8 py-4 rounded-lg text-lg font-medium hover:border-gray-400 dark:hover:border-gray-500 hover:bg-gray-50 dark:hover:bg-gray-800 transition-all"
+                  className="border-2 border-gray-300 text-gray-700 px-8 py-4 rounded-lg text-lg font-medium hover:border-gray-400 hover:bg-gray-50 transition-all"
                 >
                   I Already Have an Account
                 </Link>
@@ -194,13 +192,13 @@ export default function Home() {
                 <motion.div
                   key={idx}
                   variants={fadeInUp}
-                  className="bg-white/60 dark:bg-gray-800/60 backdrop-blur-sm p-8 rounded-xl shadow-lg border border-gray-200 dark:border-gray-700"
+                  className="bg-white/60 backdrop-blur-sm p-8 rounded-xl shadow-lg border border-gray-200"
                 >
                   <div className="w-12 h-12 bg-gradient-to-r from-purple-500 to-blue-500 rounded-lg flex items-center justify-center mb-4">
                     {icon}
                   </div>
-                  <h3 className="text-xl font-semibold text-gray-900 dark:text-white mb-3">{title}</h3>
-                  <p className="text-gray-600 dark:text-gray-300">{description}</p>
+                  <h3 className="text-xl font-semibold text-gray-900 mb-3">{title}</h3>
+                  <p className="text-gray-600">{description}</p>
                 </motion.div>
               ))}
             </motion.div>
@@ -210,9 +208,9 @@ export default function Home() {
 
       {/* Dashboard for authenticated users */}
       <SignedIn>
-        <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
+        <div className="min-h-screen bg-gray-50">
           {/* Navigation for logged in users */}
-          <nav className="bg-white dark:bg-gray-800 shadow-sm border-b border-gray-200 dark:border-gray-700">
+          <nav className="bg-white shadow-sm border-b border-gray-200">
             <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
               <div className="flex justify-between items-center py-4">
                 <h1 className="text-2xl font-bold bg-gradient-to-r from-purple-600 to-blue-600 bg-clip-text text-transparent">
@@ -230,7 +228,7 @@ export default function Home() {
                   initial={{ opacity: 0, y: -10 }}
                   animate={{ opacity: 1, y: 0 }}
                   exit={{ opacity: 0, y: -10 }}
-                  className="bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-700 text-green-800 dark:text-green-300 px-4 py-3 rounded-lg mb-6"
+                  className="bg-green-50 border border-green-200 text-green-800 px-4 py-3 rounded-lg mb-6"
                 >
                   {successMessage}
                 </motion.div>
@@ -240,7 +238,7 @@ export default function Home() {
                   initial={{ opacity: 0, y: -10 }}
                   animate={{ opacity: 1, y: 0 }}
                   exit={{ opacity: 0, y: -10 }}
-                  className="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-700 text-red-800 dark:text-red-300 px-4 py-3 rounded-lg mb-6"
+                  className="bg-red-50 border border-red-200 text-red-800 px-4 py-3 rounded-lg mb-6"
                 >
                   {error}
                 </motion.div>
@@ -255,7 +253,7 @@ export default function Home() {
               {loading ? (
                 <div className="text-center py-8">
                   <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-purple-600 mx-auto"></div>
-                  <p className="text-gray-600 dark:text-gray-400 mt-2">Loading your entries...</p>
+                  <p className="text-gray-600 mt-2">Loading your entries...</p>
                 </div>
               ) : (
                 <motion.div className="space-y-6 mt-8">
@@ -264,9 +262,9 @@ export default function Home() {
                       initial={{ opacity: 0 }}
                       animate={{ opacity: 1 }}
                       transition={{ delay: 0.3 }}
-                      className="text-center py-12 bg-white dark:bg-gray-800 rounded-lg shadow-sm"
+                      className="text-center py-12 bg-white rounded-lg shadow-sm"
                     >
-                      <p className="text-gray-600 dark:text-gray-400 text-lg">No entries yet. Start writing your first entry above!</p>
+                      <p className="text-gray-600 text-lg">No entries yet. Start writing your first entry above!</p>
                     </motion.div>
                   ) : (
                     entries.map((entry) => (

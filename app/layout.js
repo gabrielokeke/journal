@@ -1,6 +1,6 @@
+// app/layout.js
 import { ClerkProvider } from '@clerk/nextjs'
 import { Geist, Geist_Mono } from 'next/font/google'
-import { ThemeProvider } from './provider/ThemeProvider'
 import './globals.css'
 
 const geistSans = Geist({
@@ -21,23 +21,18 @@ export const metadata = {
 export const viewport = {
   width: 'device-width',
   initialScale: 1,
-  themeColor: [
-    { media: '(prefers-color-scheme: light)', color: '#8b5cf6' },
-    { media: '(prefers-color-scheme: dark)', color: '#1f2937' }
-  ]
+  themeColor: '#8b5cf6'
 }
 
 export default function RootLayout({ children }) {
   return (
     <ClerkProvider>
-      <html lang="en" suppressHydrationWarning>
+      <html lang="en">
         <head>
           <meta name="viewport" content="width=device-width, initial-scale=1" />
         </head>
         <body className={`${geistSans.variable} ${geistMono.variable} antialiased`}>
-          <ThemeProvider>
-            {children}
-          </ThemeProvider>
+          {children}
         </body>
       </html>
     </ClerkProvider>
