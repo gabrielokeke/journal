@@ -107,6 +107,12 @@ export default function ProfileEditModal({ isOpen, onClose, onSave }) {
   }
 
   const handleSave = async () => {
+    // Check if online
+    if (!navigator.onLine) {
+      alert('⚠️ You need to be online to update your profile. Please connect to the internet and try again.')
+      return
+    }
+
     setLoading(true)
     try {
       const response = await fetch('/api/user/profile', {

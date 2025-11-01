@@ -1,5 +1,4 @@
 "use client"
-//app/page.js
 import { useState, useEffect } from 'react'
 import Head from 'next/head'
 import Link from 'next/link'
@@ -9,6 +8,8 @@ import { LuPenLine, LuLock, LuTrendingUp } from 'react-icons/lu'
 import CustomUserProfile from '../components/CustomUserProfile'
 import EntryForm from '../components/EntryForm'
 import EntryCard from '../components/EntryCard'
+import OnlineStatus from '../components/OnlineStatus'
+import { syncOfflineEntries, getOfflineEntries } from '../lib/offlineStorage'
 
 const containerVariant = {
   hidden: { opacity: 0 },
@@ -29,10 +30,47 @@ export default function Home() {
   const [error, setError] = useState('')
   const [editingEntry, setEditingEntry] = useState(null)
   const [successMessage, setSuccessMessage] = useState('')
+  const [offlineEntries, setOfflineEntries] = useState([])
+  const [syncing, setSyncing] = useState(false)
 
   useEffect(() => {
     fetchEntries()
+    loadOfflineEntries()
+
+    // Auto-sync when coming online
+    const handleOnline = async () => {
+      await syncEntries()
+    }
+
+    window.addEventListener('online', handleOnline)
+    return () => window.removeEventListener('online', handleOnline)
   }, [])
+
+  const loadOfflineEntries = async () => {
+    try {
+      const offline = await getOfflineEntries()
+      setOfflineEntries(offline)
+    } catch (err) {
+      console.error('Failed to load offline entries:', err)
+    }
+  }
+
+  const syncEntries = async () => {
+    setSyncing(true)
+    try {
+      const result = await syncOfflineEntries()
+      if (result.synced.length > 0) {
+        setSuccessMessage(`✅ Synced ${result.synced.length} offline entries!`)
+        setTimeout(() => setSuccessMessage(''), 5000)
+        await fetchEntries()
+        await loadOfflineEntries()
+      }
+    } catch (err) {
+      console.error('Sync failed:', err)
+    } finally {
+      setSyncing(false)
+    }
+  }
 
   const fetchEntries = async () => {
     try {
@@ -71,6 +109,7 @@ export default function Home() {
         setSuccessMessage(editingEntry ? 'Entry updated!' : 'Entry created!')
         setEditingEntry(null)
         fetchEntries()
+        setTimeout(() => setSuccessMessage(''), 3000)
       } else {
         setError(data.error || 'Something went wrong')
       }
@@ -80,6 +119,8 @@ export default function Home() {
   }
 
   const handleDelete = async (id) => {
+    if (!confirm('Are you sure you want to delete this entry?')) return
+
     try {
       const response = await fetch(`/api/entries/${id}`, {
         method: 'DELETE',
@@ -88,6 +129,8 @@ export default function Home() {
       const data = await response.json()
 
       if (data.success) {
+        setSuccessMessage('Entry deleted!')
+        setTimeout(() => setSuccessMessage(''), 3000)
         fetchEntries()
       } else {
         setError(data.error || 'Failed to delete entry')
@@ -101,6 +144,7 @@ export default function Home() {
     <>
       <Head>
         <title>Daily Journal - Your Personal Space</title>
+        <meta name="description" content="Your daily dose of clarity, one thought at a time" />
       </Head>
 
       {/* Landing page for non-authenticated users */}
@@ -149,7 +193,7 @@ export default function Home() {
               </h1>
               <p className="text-xl text-center text-gray-600 mb-8 max-w-3xl mx-auto">
                 Capture your daily experiences, track your moods, and reflect on your journey. 
-                A private, secure space that's entirely yours.
+                A private, secure space that's entirely yours. Works offline too!
               </p>
               <div className="flex flex-col sm:flex-row gap-4 justify-center">
                 <Link
@@ -209,6 +253,9 @@ export default function Home() {
       {/* Dashboard for authenticated users */}
       <SignedIn>
         <div className="min-h-screen bg-gray-50">
+          {/* Online Status Indicator */}
+          <OnlineStatus />
+
           {/* Navigation for logged in users */}
           <nav className="bg-white shadow-sm border-b border-gray-200">
             <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -243,7 +290,40 @@ export default function Home() {
                   {error}
                 </motion.div>
               )}
+              {syncing && (
+                <motion.div
+                  initial={{ opacity: 0, y: -10 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  exit={{ opacity: 0, y: -10 }}
+                  className="bg-blue-50 border border-blue-200 text-blue-800 px-4 py-3 rounded-lg mb-6 flex items-center space-x-2"
+                >
+                  <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-blue-600"></div>
+                  <span>Syncing offline entries...</span>
+                </motion.div>
+              )}
             </AnimatePresence>
+
+            {/* Show offline entries count */}
+            {offlineEntries.length > 0 && (
+              <motion.div
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                className="bg-yellow-50 border border-yellow-200 text-yellow-800 px-4 py-3 rounded-lg mb-6 flex items-center justify-between"
+              >
+                <span className="font-medium">
+                  📴 You have {offlineEntries.length} offline {offlineEntries.length === 1 ? 'entry' : 'entries'} waiting to sync
+                </span>
+                {navigator.onLine && (
+                  <button
+                    onClick={syncEntries}
+                    disabled={syncing}
+                    className="bg-yellow-600 hover:bg-yellow-700 text-white px-4 py-2 rounded-md text-sm font-medium disabled:opacity-50"
+                  >
+                    {syncing ? 'Syncing...' : 'Sync Now'}
+                  </button>
+                )}
+              </motion.div>
+            )}
 
             <motion.div initial="hidden" animate="show" variants={containerVariant}>
               <motion.div variants={fadeInUp}>
@@ -257,7 +337,7 @@ export default function Home() {
                 </div>
               ) : (
                 <motion.div className="space-y-6 mt-8">
-                  {entries.length === 0 ? (
+                  {entries.length === 0 && offlineEntries.length === 0 ? (
                     <motion.div
                       initial={{ opacity: 0 }}
                       animate={{ opacity: 1 }}
@@ -267,20 +347,47 @@ export default function Home() {
                       <p className="text-gray-600 text-lg">No entries yet. Start writing your first entry above!</p>
                     </motion.div>
                   ) : (
-                    entries.map((entry) => (
-                      <motion.div
-                        key={entry._id}
-                        variants={fadeInUp}
-                        initial="hidden"
-                        animate="show"
-                      >
-                        <EntryCard
-                          entry={entry}
-                          onEdit={() => setEditingEntry(entry)}
-                          onDelete={() => handleDelete(entry._id)}
-                        />
-                      </motion.div>
-                    ))
+                    <>
+                      {/* Show offline entries first */}
+                      {offlineEntries.map((entry, index) => (
+                        <motion.div
+                          key={`offline-${index}`}
+                          variants={fadeInUp}
+                          initial="hidden"
+                          animate="show"
+                          className="relative"
+                        >
+                          <div className="absolute top-2 right-2 bg-orange-500 text-white px-3 py-1 rounded-full text-xs font-medium z-10">
+                            📴 Offline
+                          </div>
+                          <EntryCard
+                            entry={{
+                              ...entry,
+                              _id: `offline-${index}`,
+                              createdAt: new Date(entry.timestamp).toISOString()
+                            }}
+                            onEdit={() => {}}
+                            onDelete={() => {}}
+                          />
+                        </motion.div>
+                      ))}
+
+                      {/* Show synced entries */}
+                      {entries.map((entry) => (
+                        <motion.div
+                          key={entry._id}
+                          variants={fadeInUp}
+                          initial="hidden"
+                          animate="show"
+                        >
+                          <EntryCard
+                            entry={entry}
+                            onEdit={() => setEditingEntry(entry)}
+                            onDelete={() => handleDelete(entry._id)}
+                          />
+                        </motion.div>
+                      ))}
+                    </>
                   )}
                 </motion.div>
               )}
