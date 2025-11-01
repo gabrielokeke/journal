@@ -1,5 +1,11 @@
 //component/EntryCard.jsx
+import { useState } from 'react'
+import { LuWifiOff } from 'react-icons/lu'
+
 export default function EntryCard({ entry, onEdit, onDelete }) {
+  const [isDeleting, setIsDeleting] = useState(false)
+  const [isOffline, setIsOffline] = useState(!navigator.onLine)
+
   const moodEmojis = {
     1: "😢",
     2: "😞",
@@ -28,8 +34,53 @@ export default function EntryCard({ entry, onEdit, onDelete }) {
     })
   }
 
+  const handleEdit = () => {
+    if (entry.offline) {
+      alert('⚠️ Cannot edit offline entries. Please wait for sync or delete and recreate.')
+      return
+    }
+    if (isOffline) {
+      alert('⚠️ You need to be online to edit entries.')
+      return
+    }
+    onEdit()
+  }
+
+  const handleDelete = async () => {
+    if (entry.offline) {
+      if (!confirm('Delete this offline entry? It hasn\'t been synced yet.')) return
+    } else {
+      if (isOffline) {
+        alert('⚠️ You need to be online to delete entries.')
+        return
+      }
+      if (!confirm('Are you sure you want to delete this entry?')) return
+    }
+
+    setIsDeleting(true)
+    try {
+      await onDelete()
+    } catch (error) {
+      console.error('Delete failed:', error)
+    } finally {
+      setIsDeleting(false)
+    }
+  }
+
   return (
-    <div className="bg-white rounded-lg shadow-md mb-4 hover:shadow-lg transition-shadow overflow-hidden">
+    <div className={`bg-white rounded-lg shadow-md mb-4 hover:shadow-lg transition-shadow overflow-hidden relative ${
+      entry.offline ? 'border-2 border-orange-300' : ''
+    }`}>
+      {/* Offline Badge */}
+      {entry.offline && (
+        <div className="absolute top-3 right-3 z-10">
+          <div className="bg-orange-500 text-white px-3 py-1 rounded-full text-xs font-bold flex items-center space-x-1 shadow-md">
+            <LuWifiOff className="w-3 h-3" />
+            <span>Pending Sync</span>
+          </div>
+        </div>
+      )}
+
       {/* Image section - only show if image exists */}
       {entry.image && (
         <div className="relative w-full">
@@ -72,35 +123,71 @@ export default function EntryCard({ entry, onEdit, onDelete }) {
         <div className="mt-4 flex justify-between items-center pt-4">
           <div className="space-x-3">
             <button
-              onClick={onEdit}
-              className="text-blue-600 cursor-pointer hover:text-blue-800 font-semibold transition-colors"
+              onClick={handleEdit}
+              disabled={entry.offline || isOffline || isDeleting}
+              className={`${
+                entry.offline || isOffline || isDeleting
+                  ? 'text-gray-400 cursor-not-allowed'
+                  : 'text-blue-600 hover:text-blue-800 cursor-pointer'
+              } font-semibold transition-colors`}
+              title={
+                entry.offline 
+                  ? 'Cannot edit offline entries' 
+                  : isOffline 
+                  ? 'Need internet to edit' 
+                  : 'Edit entry'
+              }
             >
               Edit
             </button>
             <button
-              onClick={onDelete}
-              className="text-red-600 cursor-pointer hover:text-red-800 font-semibold transition-colors"
+              onClick={handleDelete}
+              disabled={isDeleting}
+              className={`${
+                isDeleting
+                  ? 'text-gray-400 cursor-not-allowed'
+                  : 'text-red-600 hover:text-red-800 cursor-pointer'
+              } font-semibold transition-colors`}
             >
-              Delete
+              {isDeleting ? 'Deleting...' : 'Delete'}
             </button>
           </div>
           
           {/* Show image indicator if there's an image */}
-          {entry.image && (
-            <div className="flex items-center text-gray-400">
-              <svg className="w-4 h-4 mr-1" fill="currentColor" viewBox="0 0 20 20">
-                <path fillRule="evenodd" d="M4 3a2 2 0 00-2 2v10a2 2 0 002 2h12a2 2 0 002-2V5a2 2 0 00-2-2H4zm12 12H4l4-8 3 6 2-4 3 6z" clipRule="evenodd" />
-              </svg>
-              <span className="text-xs">Image</span>
-            </div>
-          )}
+          <div className="flex items-center space-x-2">
+            {entry.image && (
+              <div className="flex items-center text-gray-400">
+                <svg className="w-4 h-4 mr-1" fill="currentColor" viewBox="0 0 20 20">
+                  <path fillRule="evenodd" d="M4 3a2 2 0 00-2 2v10a2 2 0 002 2h12a2 2 0 002-2V5a2 2 0 00-2-2H4zm12 12H4l4-8 3 6 2-4 3 6z" clipRule="evenodd" />
+                </svg>
+                <span className="text-xs">Image</span>
+              </div>
+            )}
+            
+            {/* Show offline indicator for offline entries */}
+            {entry.offline && (
+              <div className="flex items-center text-orange-500">
+                <LuWifiOff className="w-4 h-4 mr-1" />
+                <span className="text-xs font-medium">Not Synced</span>
+              </div>
+            )}
+          </div>
         </div>
 
         {/* Date at the bottom */}
         <div className="mt-3 pt-3 border-t border-gray-100">
-          <span className="text-sm text-gray-500">
-            {formatDate(entry.createdAt)}
-          </span>
+          <div className="flex items-center justify-between">
+            <span className="text-sm text-gray-500">
+              {formatDate(entry.createdAt)}
+            </span>
+            
+            {/* Additional offline info */}
+            {entry.offline && (
+              <span className="text-xs text-orange-600 font-medium">
+                Will sync when online
+              </span>
+            )}
+          </div>
         </div>
       </div>
     </div>
