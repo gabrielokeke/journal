@@ -1,22 +1,122 @@
 "use client"
 import { useState, useEffect } from 'react'
-import SpeechRecognition, { useSpeechRecognition } from 'react-speech-recognition'
 import { LuMic, LuMicOff, LuStopCircle, LuX, LuCheck, LuAlertCircle } from 'react-icons/lu'
 import { motion, AnimatePresence } from 'framer-motion'
+import dynamic from 'next/dynamic'
+
+// Dynamically import speech recognition to avoid SSR issues
+const useSpeechRecognitionHook = () => {
+  const [recognition, setRecognition] = useState(null)
+  const [transcript, setTranscript] = useState('')
+  const [isListening, setIsListening] = useState(false)
+  const [isSupported, setIsSupported] = useState(true)
+
+  useEffect(() => {
+    if (typeof window === 'undefined') return
+
+    // Check if browser supports speech recognition
+    const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition
+    
+    if (!SpeechRecognition) {
+      setIsSupported(false)
+      return
+    }
+
+    const recognitionInstance = new SpeechRecognition()
+    recognitionInstance.continuous = true
+    recognitionInstance.interimResults = true
+    recognitionInstance.lang = 'en-US'
+
+    recognitionInstance.onresult = (event) => {
+      let finalTranscript = ''
+      let interimTranscript = ''
+
+      for (let i = event.resultIndex; i < event.results.length; i++) {
+        const transcriptPiece = event.results[i][0].transcript
+        if (event.results[i].isFinal) {
+          finalTranscript += transcriptPiece + ' '
+        } else {
+          interimTranscript += transcriptPiece
+        }
+      }
+
+      setTranscript(prev => {
+        const newText = prev + finalTranscript
+        return newText
+      })
+    }
+
+    recognitionInstance.onerror = (event) => {
+      console.error('Speech recognition error:', event.error)
+      if (event.error === 'not-allowed') {
+        alert('Microphone access denied. Please allow microphone access in your browser settings.')
+      }
+      setIsListening(false)
+    }
+
+    recognitionInstance.onend = () => {
+      setIsListening(false)
+    }
+
+    setRecognition(recognitionInstance)
+  }, [])
+
+  const startListening = () => {
+    if (recognition) {
+      try {
+        recognition.start()
+        setIsListening(true)
+      } catch (error) {
+        console.error('Error starting recognition:', error)
+      }
+    }
+  }
+
+  const stopListening = () => {
+    if (recognition) {
+      recognition.stop()
+      setIsListening(false)
+    }
+  }
+
+  const resetTranscript = () => {
+    setTranscript('')
+  }
+
+  return {
+    transcript,
+    listening: isListening,
+    startListening,
+    stopListening,
+    resetTranscript,
+    browserSupportsSpeechRecognition: isSupported
+  }
+}
 
 export default function VoiceRecorder({ onTranscript, onClose }) {
   const [isRecording, setIsRecording] = useState(false)
   const [isPaused, setIsPaused] = useState(false)
   const [recordingTime, setRecordingTime] = useState(0)
   const [showSuccess, setShowSuccess] = useState(false)
+  const [isMicrophoneAvailable, setIsMicrophoneAvailable] = useState(true)
 
   const {
     transcript,
     listening,
+    startListening,
+    stopListening,
     resetTranscript,
-    browserSupportsSpeechRecognition,
-    isMicrophoneAvailable
-  } = useSpeechRecognition()
+    browserSupportsSpeechRecognition
+  } = useSpeechRecognitionHook()
+
+  useEffect(() => {
+    // Check microphone permission
+    if (typeof navigator !== 'undefined' && navigator.mediaDevices) {
+      navigator.mediaDevices.getUserMedia({ audio: true })
+        .then(() => setIsMicrophoneAvailable(true))
+        .catch(() => setIsMicrophoneAvailable(false))
+    }
+  }, [])
 
   useEffect(() => {
     let interval
@@ -61,10 +161,7 @@ export default function VoiceRecorder({ onTranscript, onClose }) {
 
   const handleStartRecording = async () => {
     try {
-      await SpeechRecognition.startListening({ 
-        continuous: true,
-        language: 'en-US'
-      })
+      startListening()
       setIsRecording(true)
       setIsPaused(false)
     } catch (error) {
@@ -74,20 +171,17 @@ export default function VoiceRecorder({ onTranscript, onClose }) {
   }
 
   const handlePauseRecording = () => {
-    SpeechRecognition.stopListening()
+    stopListening()
     setIsPaused(true)
   }
 
   const handleResumeRecording = async () => {
-    await SpeechRecognition.startListening({ 
-      continuous: true,
-      language: 'en-US'
-    })
+    startListening()
     setIsPaused(false)
   }
 
   const handleStopRecording = () => {
-    SpeechRecognition.stopListening()
+    stopListening()
     setIsRecording(false)
     setIsPaused(false)
     
@@ -108,7 +202,7 @@ export default function VoiceRecorder({ onTranscript, onClose }) {
   }
 
   const handleCancel = () => {
-    SpeechRecognition.stopListening()
+    stopListening()
     resetTranscript()
     onClose()
   }
