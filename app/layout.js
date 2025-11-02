@@ -1,6 +1,7 @@
 // app/layout.js
 import { ClerkProvider } from '@clerk/nextjs'
 import { Geist, Geist_Mono } from 'next/font/google'
+import 'regenerator-runtime/runtime'
 import './globals.css'
 
 const geistSans = Geist({

@@ -1,7 +1,8 @@
 "use client"
 import { useState, useEffect, useRef } from "react"
-import { LuUpload, LuX, LuWifiOff } from 'react-icons/lu'
+import { LuUpload, LuX, LuWifiOff, LuMic } from 'react-icons/lu'
 import { saveOfflineEntry } from '../lib/offlineStorage'
+import VoiceRecorder from './VoiceRecorder'
 
 const categories = [
   "Work",
@@ -30,13 +31,16 @@ export default function EntryForm({ onSubmit, editingEntry }) {
   const [imagePreview, setImagePreview] = useState("")
   const [uploading, setUploading] = useState(false)
   const [submitting, setSubmitting] = useState(false)
-  const [isOffline, setIsOffline] = useState(false)
+  const [offlineMode, setOfflineMode] = useState(false)
+  const [showOfflineMessage, setShowOfflineMessage] = useState(false)
+  const [isSyncing, setIsSyncing] = useState(false)
+  const [showVoiceRecorder, setShowVoiceRecorder] = useState(false)
   const fileInputRef = useRef(null)
 
   // Check online status
   useEffect(() => {
     const updateOnlineStatus = () => {
-      setIsOffline(!navigator.onLine)
+      setOfflineMode(!navigator.onLine)
     }
 
     updateOnlineStatus()
@@ -58,14 +62,21 @@ export default function EntryForm({ onSubmit, editingEntry }) {
       setImage(editingEntry.image || "")
       setImagePreview(editingEntry.image || "")
     } else {
-      setTitle("")
-      setContent("")
-      setCategory("Personal")
-      setMood(3)
-      setImage("")
-      setImagePreview("")
+      resetForm()
     }
   }, [editingEntry])
+
+  const resetForm = () => {
+    setTitle("")
+    setContent("")
+    setCategory("Personal")
+    setMood(3)
+    setImage("")
+    setImagePreview("")
+    if (fileInputRef.current) {
+      fileInputRef.current.value = ""
+    }
+  }
 
   const handleImageUpload = (e) => {
     const file = e.target.files[0]
@@ -109,31 +120,36 @@ export default function EntryForm({ onSubmit, editingEntry }) {
     }
   }
 
-  const resetForm = () => {
-    setTitle("")
-    setContent("")
-    setCategory("Personal")
-    setMood(3)
-    setImage("")
-    setImagePreview("")
-    if (fileInputRef.current) {
-      fileInputRef.current.value = ""
+  const handleVoiceTranscript = (transcript) => {
+    // Add transcript to content
+    if (content) {
+      setContent(content + '\n\n' + transcript)
+    } else {
+      setContent(transcript)
     }
+    setShowVoiceRecorder(false)
   }
 
   const handleSubmit = async (e) => {
     e.preventDefault()
     setSubmitting(true)
     
-    const formData = { title, content, category, mood, image }
+    const formData = { 
+      title, 
+      content, 
+      category, 
+      mood, 
+      image 
+    }
 
-    // Check if online
+    // Check if we're offline
     if (!navigator.onLine) {
-      // Save offline
       try {
         await saveOfflineEntry(formData)
-        alert('📴 You are offline. Entry saved locally and will sync when online.')
+        alert('📴 You are offline. Entry saved locally and will sync when you\'re back online!')
         resetForm()
+        setShowOfflineMessage(true)
+        setTimeout(() => setShowOfflineMessage(false), 5000)
       } catch (error) {
         alert('Failed to save offline: ' + error.message)
       }
@@ -141,13 +157,41 @@ export default function EntryForm({ onSubmit, editingEntry }) {
       return
     }
 
-    // Normal online submission
-    try {
-      const method = editingEntry ? 'PUT' : 'POST'
-      const url = editingEntry ? `/api/entries/${editingEntry._id}` : '/api/entries'
+    // If editing an existing entry (online mode only)
+    if (editingEntry) {
+      try {
+        const response = await fetch(`/api/entries/${editingEntry._id}`, {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(formData),
+        })
 
-      const response = await fetch(url, {
-        method,
+        const data = await response.json()
+
+        if (data.success) {
+          onSubmit(formData)
+          resetForm()
+        } else {
+          alert(data.error || 'Something went wrong')
+        }
+      } catch (err) {
+        // If network fails while editing, save as new offline entry
+        try {
+          await saveOfflineEntry(formData)
+          alert('📴 Network error. Entry saved offline and will sync later.')
+          resetForm()
+        } catch (offlineErr) {
+          alert('Failed to save: ' + offlineErr.message)
+        }
+      }
+      setSubmitting(false)
+      return
+    }
+
+    // Normal online submission for new entries
+    try {
+      const response = await fetch('/api/entries', {
+        method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(formData),
       })
@@ -158,14 +202,16 @@ export default function EntryForm({ onSubmit, editingEntry }) {
         onSubmit(formData)
         resetForm()
       } else {
-        alert(data.error || 'Something went wrong')
+        throw new Error(data.error || 'Something went wrong')
       }
     } catch (err) {
       // If fetch fails, save offline
       try {
         await saveOfflineEntry(formData)
-        alert('📴 Network error. Entry saved offline and will sync later.')
+        alert('📴 Network error. Entry saved offline and will sync when you\'re back online.')
         resetForm()
+        setShowOfflineMessage(true)
+        setTimeout(() => setShowOfflineMessage(false), 5000)
       } catch (offlineErr) {
         alert('Failed to save: ' + offlineErr.message)
       }
@@ -176,8 +222,8 @@ export default function EntryForm({ onSubmit, editingEntry }) {
 
   return (
     <>
-      {/* Offline Status Banner */}
-      {isOffline && (
+      {/* Offline/Sync Status Messages */}
+      {offlineMode && (
         <div className="bg-orange-50 border border-orange-200 text-orange-800 px-4 py-3 rounded-lg mb-4 flex items-center space-x-2">
           <LuWifiOff className="w-5 h-5" />
           <span className="font-medium">You're offline. Entries will be saved locally and synced when online.</span>
@@ -203,16 +249,30 @@ export default function EntryForm({ onSubmit, editingEntry }) {
           disabled={submitting}
         />
 
-        <textarea
-          placeholder="What did you accomplish today?"
-          className="w-full p-3 mb-4 border border-gray-300 text-black placeholder:text-gray-400 bg-white rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 resize-none"
-          rows={4}
-          value={content}
-          onChange={(e) => setContent(e.target.value)}
-          required
-          maxLength={1000}
-          disabled={submitting}
-        />
+        {/* Content with Voice Button */}
+        <div className="relative mb-4">
+          <textarea
+            placeholder="What did you accomplish today?"
+            className="w-full p-3 pr-12 border border-gray-300 text-black placeholder:text-gray-400 bg-white rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 resize-none"
+            rows={4}
+            value={content}
+            onChange={(e) => setContent(e.target.value)}
+            required
+            maxLength={1000}
+            disabled={submitting}
+          />
+          
+          {/* Voice Recording Button */}
+          <button
+            type="button"
+            onClick={() => setShowVoiceRecorder(true)}
+            disabled={submitting}
+            className="absolute bottom-3 right-3 p-2 bg-gradient-to-r from-purple-600 to-blue-600 text-white rounded-full hover:from-purple-700 hover:to-blue-700 transition-all shadow-md disabled:opacity-50 group"
+            title="Voice to text"
+          >
+            <LuMic className="w-5 h-5" />
+          </button>
+        </div>
 
         {/* Image Upload Section */}
         <div className="mb-4">
@@ -320,7 +380,7 @@ export default function EntryForm({ onSubmit, editingEntry }) {
             </>
           ) : uploading ? (
             <span>Processing Image...</span>
-          ) : isOffline ? (
+          ) : offlineMode ? (
             <>
               <LuWifiOff className="w-5 h-5" />
               <span>{editingEntry ? "Update Entry (Offline)" : "Save Entry (Offline)"}</span>
@@ -330,12 +390,20 @@ export default function EntryForm({ onSubmit, editingEntry }) {
           )}
         </button>
 
-        {isOffline && (
+        {offlineMode && (
           <p className="text-xs text-gray-500 text-center mt-2">
             Entry will be automatically synced when you're back online
           </p>
         )}
       </form>
+
+      {/* Voice Recorder Modal */}
+      {showVoiceRecorder && (
+        <VoiceRecorder
+          onTranscript={handleVoiceTranscript}
+          onClose={() => setShowVoiceRecorder(false)}
+        />
+      )}
     </>
   )
 }
