@@ -1,4 +1,3 @@
-/* ===== components/OnlineStatus.js ===== */
 "use client"
 import { useState, useEffect } from 'react'
 import { LuWifi, LuWifiOff } from 'react-icons/lu'
@@ -9,27 +8,30 @@ export default function OnlineStatus() {
   const [showStatus, setShowStatus] = useState(false)
 
   useEffect(() => {
-    // Set initial online status
-    setIsOnline(navigator.onLine)
+    // Safe check for navigator
+    if (typeof window !== 'undefined') {
+      // Set initial online status
+      setIsOnline(navigator.onLine)
 
-    const handleOnline = () => {
-      setIsOnline(true)
-      setShowStatus(true)
-      // Hide the online message after 3 seconds
-      setTimeout(() => setShowStatus(false), 3000)
-    }
+      const handleOnline = () => {
+        setIsOnline(true)
+        setShowStatus(true)
+        // Hide the online message after 3 seconds
+        setTimeout(() => setShowStatus(false), 3000)
+      }
 
-    const handleOffline = () => {
-      setIsOnline(false)
-      setShowStatus(true)
-    }
+      const handleOffline = () => {
+        setIsOnline(false)
+        setShowStatus(true)
+      }
 
-    window.addEventListener('online', handleOnline)
-    window.addEventListener('offline', handleOffline)
+      window.addEventListener('online', handleOnline)
+      window.addEventListener('offline', handleOffline)
 
-    return () => {
-      window.removeEventListener('online', handleOnline)
-      window.removeEventListener('offline', handleOffline)
+      return () => {
+        window.removeEventListener('online', handleOnline)
+        window.removeEventListener('offline', handleOffline)
+      }
     }
   }, [])
 

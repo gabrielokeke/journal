@@ -1,10 +1,28 @@
-//component/EntryCard.jsx
-import { useState } from 'react'
+"use client"
+import { useState, useEffect } from 'react'
 import { LuWifiOff } from 'react-icons/lu'
 
 export default function EntryCard({ entry, onEdit, onDelete }) {
   const [isDeleting, setIsDeleting] = useState(false)
-  const [isOffline, setIsOffline] = useState(!navigator.onLine)
+  const [isOffline, setIsOffline] = useState(false)
+
+  useEffect(() => {
+    // Safe check for navigator
+    if (typeof window !== 'undefined') {
+      setIsOffline(!navigator.onLine)
+
+      const handleOnline = () => setIsOffline(false)
+      const handleOffline = () => setIsOffline(true)
+
+      window.addEventListener('online', handleOnline)
+      window.addEventListener('offline', handleOffline)
+
+      return () => {
+        window.removeEventListener('online', handleOnline)
+        window.removeEventListener('offline', handleOffline)
+      }
+    }
+  }, [])
 
   const moodEmojis = {
     1: "😢",

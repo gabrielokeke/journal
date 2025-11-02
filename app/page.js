@@ -1,6 +1,5 @@
 "use client"
 import { useState, useEffect } from 'react'
-import Head from 'next/head'
 import Link from 'next/link'
 import { SignedIn, SignedOut } from '@clerk/nextjs'
 import { motion, AnimatePresence } from 'framer-motion'
@@ -9,6 +8,8 @@ import CustomUserProfile from '../components/CustomUserProfile'
 import EntryForm from '../components/EntryForm'
 import EntryCard from '../components/EntryCard'
 import OnlineStatus from '../components/OnlineStatus'
+import InstallPrompt from '../components/InstallPrompt'
+import SearchFilter from '../components/SearchFilter'
 import { syncOfflineEntries, getOfflineEntries } from '../lib/offlineStorage'
 
 const containerVariant = {
@@ -26,6 +27,7 @@ const fadeInUp = {
 
 export default function Home() {
   const [entries, setEntries] = useState([])
+  const [filteredEntries, setFilteredEntries] = useState([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
   const [editingEntry, setEditingEntry] = useState(null)
@@ -37,13 +39,23 @@ export default function Home() {
     fetchEntries()
     loadOfflineEntries()
 
-    // Auto-sync when coming online
+    // Auto-sync when coming online (with debounce)
+    let syncTimeout
     const handleOnline = async () => {
-      await syncEntries()
+      // Clear any pending sync
+      if (syncTimeout) clearTimeout(syncTimeout)
+      
+      // Debounce sync by 1 second
+      syncTimeout = setTimeout(async () => {
+        await syncEntries()
+      }, 1000)
     }
 
     window.addEventListener('online', handleOnline)
-    return () => window.removeEventListener('online', handleOnline)
+    return () => {
+      window.removeEventListener('online', handleOnline)
+      if (syncTimeout) clearTimeout(syncTimeout)
+    }
   }, [])
 
   const loadOfflineEntries = async () => {
@@ -56,6 +68,8 @@ export default function Home() {
   }
 
   const syncEntries = async () => {
+    if (syncing) return // Prevent multiple simultaneous syncs
+    
     setSyncing(true)
     try {
       const result = await syncOfflineEntries()
@@ -79,6 +93,7 @@ export default function Home() {
       const data = await response.json()
       if (data.success) {
         setEntries(data.data)
+        setFilteredEntries(data.data) // Initialize filtered entries
         setError('')
       } else {
         setError(data.error || 'Failed to fetch entries')
@@ -140,13 +155,15 @@ export default function Home() {
     }
   }
 
+  const handleFilteredResults = (filtered) => {
+    setFilteredEntries(filtered)
+  }
+
+  // Combine offline and filtered entries for display
+  const displayEntries = filteredEntries
+
   return (
     <>
-      <Head>
-        <title>Daily Journal - Your Personal Space</title>
-        <meta name="description" content="Your daily dose of clarity, one thought at a time" />
-      </Head>
-
       {/* Landing page for non-authenticated users */}
       <SignedOut>
         <div className="min-h-screen bg-gradient-to-br from-purple-50 via-blue-50 to-indigo-100">
@@ -253,7 +270,8 @@ export default function Home() {
       {/* Dashboard for authenticated users */}
       <SignedIn>
         <div className="min-h-screen bg-gray-50">
-          {/* Online Status Indicator */}
+          {/* Install Prompt & Online Status */}
+          <InstallPrompt />
           <OnlineStatus />
 
           {/* Navigation for logged in users */}
@@ -313,7 +331,7 @@ export default function Home() {
                 <span className="font-medium">
                   📴 You have {offlineEntries.length} offline {offlineEntries.length === 1 ? 'entry' : 'entries'} waiting to sync
                 </span>
-                {navigator.onLine && (
+                {typeof window !== 'undefined' && navigator.onLine && (
                   <button
                     onClick={syncEntries}
                     disabled={syncing}
@@ -329,6 +347,21 @@ export default function Home() {
               <motion.div variants={fadeInUp}>
                 <EntryForm onSubmit={handleSubmit} editingEntry={editingEntry} />
               </motion.div>
+
+              {/* Search & Filter Component */}
+              {!loading && entries.length > 0 && (
+                <motion.div variants={fadeInUp}>
+                  <SearchFilter 
+                    entries={entries} 
+                    onFilteredResults={handleFilteredResults}
+                  />
+                  
+                  {/* Results Count */}
+                  <div className="mb-4 text-sm text-gray-600">
+                    Showing <span className="font-semibold text-purple-600">{displayEntries.length}</span> of <span className="font-semibold">{entries.length}</span> entries
+                  </div>
+                </motion.div>
+              )}
 
               {loading ? (
                 <div className="text-center py-8">
@@ -346,6 +379,15 @@ export default function Home() {
                     >
                       <p className="text-gray-600 text-lg">No entries yet. Start writing your first entry above!</p>
                     </motion.div>
+                  ) : displayEntries.length === 0 ? (
+                    <motion.div
+                      initial={{ opacity: 0 }}
+                      animate={{ opacity: 1 }}
+                      className="text-center py-12 bg-white rounded-lg shadow-sm"
+                    >
+                      <p className="text-gray-600 text-lg">No entries match your filters.</p>
+                      <p className="text-gray-500 text-sm mt-2">Try adjusting your search or filters.</p>
+                    </motion.div>
                   ) : (
                     <>
                       {/* Show offline entries first */}
@@ -357,9 +399,6 @@ export default function Home() {
                           animate="show"
                           className="relative"
                         >
-                          <div className="absolute top-2 right-2 bg-orange-500 text-white px-3 py-1 rounded-full text-xs font-medium z-10">
-                            📴 Offline
-                          </div>
                           <EntryCard
                             entry={{
                               ...entry,
@@ -372,8 +411,8 @@ export default function Home() {
                         </motion.div>
                       ))}
 
-                      {/* Show synced entries */}
-                      {entries.map((entry) => (
+                      {/* Show filtered entries */}
+                      {displayEntries.map((entry) => (
                         <motion.div
                           key={entry._id}
                           variants={fadeInUp}

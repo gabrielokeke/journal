@@ -10,6 +10,9 @@ export default function InstallPrompt() {
   const [isStandalone, setIsStandalone] = useState(false)
 
   useEffect(() => {
+    // Only run on client side
+    if (typeof window === 'undefined') return
+
     // Check if already installed
     const isInStandaloneMode = window.matchMedia('(display-mode: standalone)').matches
     setIsStandalone(isInStandaloneMode)
@@ -18,7 +21,7 @@ export default function InstallPrompt() {
     const iOS = /iPad|iPhone|iPod/.test(navigator.userAgent) && !window.MSStream
     setIsIOS(iOS)
 
-    // Check if user already dismissed
+    // Check if user already dismissed - safe localStorage access
     const dismissed = localStorage.getItem('installPromptDismissed')
     
     if (!isInStandaloneMode && !dismissed) {
@@ -67,7 +70,10 @@ export default function InstallPrompt() {
 
   const handleDismiss = () => {
     setShowPrompt(false)
-    localStorage.setItem('installPromptDismissed', 'true')
+    // Safe localStorage access
+    if (typeof window !== 'undefined') {
+      localStorage.setItem('installPromptDismissed', 'true')
+    }
   }
 
   // Don't show if already installed or user dismissed
@@ -86,6 +92,7 @@ export default function InstallPrompt() {
           <button
             onClick={handleDismiss}
             className="absolute top-2 right-2 text-gray-400 hover:text-gray-600 transition-colors"
+            aria-label="Dismiss install prompt"
           >
             <LuX className="w-5 h-5" />
           </button>
