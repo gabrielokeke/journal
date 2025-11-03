@@ -1,8 +1,14 @@
 "use client"
-import { useState, useEffect, useRef } from "react"
+import { useState, useEffect, useRef, useCallback } from "react"
 import { LuUpload, LuX, LuWifiOff, LuMic } from 'react-icons/lu'
 import { saveOfflineEntry } from '../lib/offlineStorage'
-import VoiceRecorder from './VoiceRecorder'
+import dynamic from 'next/dynamic'
+
+// Dynamically import VoiceRecorder to prevent SSR issues
+const VoiceRecorder = dynamic(() => import('./VoiceRecorder'), {
+  ssr: false,
+  loading: () => <div>Loading voice recorder...</div>
+})
 
 const categories = [
   "Work",
@@ -23,6 +29,8 @@ const moodLabels = {
 }
 
 export default function EntryForm({ onSubmit, editingEntry }) {
+  console.log('📝 [EntryForm] Component rendered')
+  
   const [title, setTitle] = useState("")
   const [content, setContent] = useState("")
   const [category, setCategory] = useState("Personal")
@@ -33,7 +41,6 @@ export default function EntryForm({ onSubmit, editingEntry }) {
   const [submitting, setSubmitting] = useState(false)
   const [offlineMode, setOfflineMode] = useState(false)
   const [showOfflineMessage, setShowOfflineMessage] = useState(false)
-  const [isSyncing, setIsSyncing] = useState(false)
   const [showVoiceRecorder, setShowVoiceRecorder] = useState(false)
   const fileInputRef = useRef(null)
 
@@ -82,13 +89,11 @@ export default function EntryForm({ onSubmit, editingEntry }) {
     const file = e.target.files[0]
     if (!file) return
 
-    // Check file size (max 5MB)
     if (file.size > 5 * 1024 * 1024) {
       alert('Image size should be less than 5MB')
       return
     }
 
-    // Check file type
     if (!file.type.startsWith('image/')) {
       alert('Please select an image file')
       return
@@ -120,15 +125,21 @@ export default function EntryForm({ onSubmit, editingEntry }) {
     }
   }
 
-  const handleVoiceTranscript = (transcript) => {
+  // Use useCallback to prevent re-creating this function on every render
+  const handleVoiceTranscript = useCallback((transcript) => {
+    console.log('🎤 [EntryForm] Received transcript:', transcript)
+    
     // Add transcript to content
-    if (content) {
-      setContent(content + '\n\n' + transcript)
-    } else {
-      setContent(transcript)
-    }
+    setContent(prevContent => {
+      if (prevContent) {
+        return prevContent + '\n\n' + transcript
+      }
+      return transcript
+    })
+    
+    // Close the modal
     setShowVoiceRecorder(false)
-  }
+  }, [])
 
   const handleSubmit = async (e) => {
     e.preventDefault()
@@ -142,7 +153,6 @@ export default function EntryForm({ onSubmit, editingEntry }) {
       image 
     }
 
-    // Check if we're offline
     if (!navigator.onLine) {
       try {
         await saveOfflineEntry(formData)
@@ -157,7 +167,6 @@ export default function EntryForm({ onSubmit, editingEntry }) {
       return
     }
 
-    // If editing an existing entry (online mode only)
     if (editingEntry) {
       try {
         const response = await fetch(`/api/entries/${editingEntry._id}`, {
@@ -175,7 +184,6 @@ export default function EntryForm({ onSubmit, editingEntry }) {
           alert(data.error || 'Something went wrong')
         }
       } catch (err) {
-        // If network fails while editing, save as new offline entry
         try {
           await saveOfflineEntry(formData)
           alert('📴 Network error. Entry saved offline and will sync later.')
@@ -188,7 +196,6 @@ export default function EntryForm({ onSubmit, editingEntry }) {
       return
     }
 
-    // Normal online submission for new entries
     try {
       const response = await fetch('/api/entries', {
         method: 'POST',
@@ -205,7 +212,6 @@ export default function EntryForm({ onSubmit, editingEntry }) {
         throw new Error(data.error || 'Something went wrong')
       }
     } catch (err) {
-      // If fetch fails, save offline
       try {
         await saveOfflineEntry(formData)
         alert('📴 Network error. Entry saved offline and will sync when you\'re back online.')
@@ -222,7 +228,6 @@ export default function EntryForm({ onSubmit, editingEntry }) {
 
   return (
     <>
-      {/* Offline/Sync Status Messages */}
       {offlineMode && (
         <div className="bg-orange-50 border border-orange-200 text-orange-800 px-4 py-3 rounded-lg mb-4 flex items-center space-x-2">
           <LuWifiOff className="w-5 h-5" />
@@ -249,7 +254,6 @@ export default function EntryForm({ onSubmit, editingEntry }) {
           disabled={submitting}
         />
 
-        {/* Content with Voice Button */}
         <div className="relative mb-4">
           <textarea
             placeholder="What did you accomplish today?"
@@ -262,19 +266,20 @@ export default function EntryForm({ onSubmit, editingEntry }) {
             disabled={submitting}
           />
           
-          {/* Voice Recording Button */}
           <button
             type="button"
-            onClick={() => setShowVoiceRecorder(true)}
+            onClick={() => {
+              console.log('🎤 [EntryForm] Opening voice recorder')
+              setShowVoiceRecorder(true)
+            }}
             disabled={submitting}
-            className="absolute bottom-3 right-3 p-2 bg-gradient-to-r from-purple-600 to-blue-600 text-white rounded-full hover:from-purple-700 hover:to-blue-700 transition-all shadow-md disabled:opacity-50 group"
+            className="absolute bottom-3 right-3 p-2 bg-gradient-to-r from-purple-600 to-blue-600 text-white rounded-full hover:from-purple-700 hover:to-blue-700 transition-all shadow-md disabled:opacity-50"
             title="Voice to text"
           >
             <LuMic className="w-5 h-5" />
           </button>
         </div>
 
-        {/* Image Upload Section */}
         <div className="mb-4">
           <label className="block mb-2 font-medium text-gray-700">
             Add Image (optional)
@@ -397,11 +402,14 @@ export default function EntryForm({ onSubmit, editingEntry }) {
         )}
       </form>
 
-      {/* Voice Recorder Modal */}
+      {/* Voice Recorder Modal - Only render when needed */}
       {showVoiceRecorder && (
         <VoiceRecorder
           onTranscript={handleVoiceTranscript}
-          onClose={() => setShowVoiceRecorder(false)}
+          onClose={() => {
+            console.log('🎤 [EntryForm] Closing voice recorder')
+            setShowVoiceRecorder(false)
+          }}
         />
       )}
     </>
