@@ -8,6 +8,7 @@ export default function VoiceRecorder({ onTranscript, onClose }) {
   
   const recognitionRef = useRef(null)
   const isInitializedRef = useRef(false)
+  const isMountedRef = useRef(true) // Track if component is mounted
   
   const [transcript, setTranscript] = useState('')
   const [isListening, setIsListening] = useState(false)
@@ -56,11 +57,15 @@ export default function VoiceRecorder({ onTranscript, onClose }) {
 
       recognitionInstance.onstart = () => {
         console.log('🎙️ [VoiceRecorder] Recognition started')
-        setIsListening(true)
+        if (isMountedRef.current) {
+          setIsListening(true)
+        }
       }
 
       recognitionInstance.onresult = (event) => {
         console.log('📝 [VoiceRecorder] Got results')
+        
+        if (!isMountedRef.current) return
         
         let finalTranscript = ''
 
@@ -72,13 +77,15 @@ export default function VoiceRecorder({ onTranscript, onClose }) {
           }
         }
 
-        if (finalTranscript) {
+        if (finalTranscript && isMountedRef.current) {
           setTranscript(prev => prev + finalTranscript)
         }
       }
 
       recognitionInstance.onerror = (event) => {
         console.error('❌ [VoiceRecorder] Error:', event.error)
+        
+        if (!isMountedRef.current) return
         
         if (event.error === 'not-allowed') {
           alert('❌ Microphone access denied. Please allow microphone access.')
@@ -90,12 +97,16 @@ export default function VoiceRecorder({ onTranscript, onClose }) {
           console.warn('⚠️ [VoiceRecorder] Network error (may work offline in some browsers)')
         }
         
-        setIsListening(false)
+        if (isMountedRef.current) {
+          setIsListening(false)
+        }
       }
 
       recognitionInstance.onend = () => {
         console.log('🛑 [VoiceRecorder] Recognition ended')
-        setIsListening(false)
+        if (isMountedRef.current) {
+          setIsListening(false)
+        }
       }
 
       recognitionRef.current = recognitionInstance
@@ -104,22 +115,29 @@ export default function VoiceRecorder({ onTranscript, onClose }) {
       
     } catch (error) {
       console.error('❌ [VoiceRecorder] Init error:', error)
-      setIsSupported(false)
-      setErrorMessage(error.message)
+      if (isMountedRef.current) {
+        setIsSupported(false)
+        setErrorMessage(error.message)
+      }
     }
 
     // Cleanup on unmount
     return () => {
       console.log('🧹 [VoiceRecorder] Cleanup')
-      if (recognitionRef.current && isListening) {
+      isMountedRef.current = false
+      
+      if (recognitionRef.current) {
         try {
           recognitionRef.current.stop()
         } catch (e) {
           console.log('Cleanup stop error (safe to ignore):', e)
         }
       }
+      
+      // Reset initialization flag when component unmounts
+      isInitializedRef.current = false
     }
-  }, [])
+  }, []) // Empty dependency array - only run once
 
   // Check microphone permission
   useEffect(() => {
@@ -127,12 +145,16 @@ export default function VoiceRecorder({ onTranscript, onClose }) {
       navigator.mediaDevices.getUserMedia({ audio: true })
         .then((stream) => {
           console.log('✅ [VoiceRecorder] Mic access granted')
-          setIsMicrophoneAvailable(true)
+          if (isMountedRef.current) {
+            setIsMicrophoneAvailable(true)
+          }
           stream.getTracks().forEach(track => track.stop())
         })
         .catch((error) => {
           console.error('❌ [VoiceRecorder] Mic denied:', error)
-          setIsMicrophoneAvailable(false)
+          if (isMountedRef.current) {
+            setIsMicrophoneAvailable(false)
+          }
         })
     }
   }, [])
@@ -142,7 +164,9 @@ export default function VoiceRecorder({ onTranscript, onClose }) {
     let interval
     if (isRecording && !isPaused) {
       interval = setInterval(() => {
-        setRecordingTime(prev => prev + 1)
+        if (isMountedRef.current) {
+          setRecordingTime(prev => prev + 1)
+        }
       }, 1000)
     }
     return () => clearInterval(interval)
@@ -227,7 +251,9 @@ export default function VoiceRecorder({ onTranscript, onClose }) {
       onTranscript(transcript)
       setShowSuccess(true)
       setTimeout(() => {
-        onClose()
+        if (isMountedRef.current) {
+          onClose()
+        }
       }, 1500)
     } else {
       console.log('⚠️ No transcript')
@@ -383,7 +409,7 @@ export default function VoiceRecorder({ onTranscript, onClose }) {
             <div className="mt-6">
               <div className="flex items-center justify-between mb-2">
                 <label className="text-sm font-medium text-gray-700">Transcript:</label>
-                <span className="text-xs text-gray-500">{transcript.split(' ').length} words</span>
+                <span className="text-xs text-gray-500">{transcript.split(' ').filter(w => w).length} words</span>
               </div>
               <div className="bg-gray-50 border border-gray-200 rounded-lg p-4 max-h-48 overflow-y-auto">
                 <p className="text-gray-900 whitespace-pre-wrap">{transcript}</p>
