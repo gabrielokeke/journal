@@ -2,31 +2,34 @@
 import { useState, useEffect, useRef } from 'react'
 import { LuTrendingUp, LuCalendar, LuPieChart, LuBarChart3, LuActivity } from 'react-icons/lu'
 import { motion } from 'framer-motion'
-import dynamic from 'next/dynamic'
+import {
+  Chart as ChartJS,
+  CategoryScale,
+  LinearScale,
+  PointElement,
+  LineElement,
+  BarElement,
+  ArcElement,
+  Title,
+  Tooltip,
+  Legend,
+  Filler
+} from 'chart.js'
+import { Line, Bar, Pie } from 'react-chartjs-2'
 
-// Dynamically import Recharts with loading fallback
-const LineChart = dynamic(() => import('recharts').then(mod => mod.LineChart), { 
-  ssr: false,
-  loading: () => <div className="h-[300px] flex items-center justify-center"><div className="animate-spin rounded-full h-8 w-8 border-b-2 border-purple-600"></div></div>
-})
-const Line = dynamic(() => import('recharts').then(mod => mod.Line), { ssr: false })
-const BarChart = dynamic(() => import('recharts').then(mod => mod.BarChart), { 
-  ssr: false,
-  loading: () => <div className="h-[300px] flex items-center justify-center"><div className="animate-spin rounded-full h-8 w-8 border-b-2 border-purple-600"></div></div>
-})
-const Bar = dynamic(() => import('recharts').then(mod => mod.Bar), { ssr: false })
-const PieChart = dynamic(() => import('recharts').then(mod => mod.PieChart), { 
-  ssr: false,
-  loading: () => <div className="h-[300px] flex items-center justify-center"><div className="animate-spin rounded-full h-8 w-8 border-b-2 border-purple-600"></div></div>
-})
-const Pie = dynamic(() => import('recharts').then(mod => mod.Pie), { ssr: false })
-const Cell = dynamic(() => import('recharts').then(mod => mod.Cell), { ssr: false })
-const XAxis = dynamic(() => import('recharts').then(mod => mod.XAxis), { ssr: false })
-const YAxis = dynamic(() => import('recharts').then(mod => mod.YAxis), { ssr: false })
-const CartesianGrid = dynamic(() => import('recharts').then(mod => mod.CartesianGrid), { ssr: false })
-const Tooltip = dynamic(() => import('recharts').then(mod => mod.Tooltip), { ssr: false })
-const Legend = dynamic(() => import('recharts').then(mod => mod.Legend), { ssr: false })
-const ResponsiveContainer = dynamic(() => import('recharts').then(mod => mod.ResponsiveContainer), { ssr: false })
+// Register ChartJS components
+ChartJS.register(
+  CategoryScale,
+  LinearScale,
+  PointElement,
+  LineElement,
+  BarElement,
+  ArcElement,
+  Title,
+  Tooltip,
+  Legend,
+  Filler
+)
 
 const moodEmojis = {
   1: '😢',
@@ -49,7 +52,6 @@ const categoryColors = {
 export default function AnalyticsDashboard({ entries }) {
   const isMountedRef = useRef(true)
   const [activeTab, setActiveTab] = useState('overview')
-  const [isClient, setIsClient] = useState(false)
   const [stats, setStats] = useState({
     totalEntries: 0,
     currentStreak: 0,
@@ -61,7 +63,6 @@ export default function AnalyticsDashboard({ entries }) {
 
   useEffect(() => {
     isMountedRef.current = true
-    setIsClient(true)
     
     return () => {
       isMountedRef.current = false
@@ -176,8 +177,7 @@ export default function AnalyticsDashboard({ entries }) {
 
       last30Days.push({
         date: date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' }),
-        mood: avgMood ? parseFloat(avgMood.toFixed(1)) : null,
-        count: dayEntries.length
+        mood: avgMood ? parseFloat(avgMood.toFixed(1)) : null
       })
     }
     return last30Days.filter(d => d.mood !== null)
@@ -219,6 +219,144 @@ export default function AnalyticsDashboard({ entries }) {
         entries: data.entries,
         avgMood: parseFloat((data.totalMood / data.entries).toFixed(1))
       }))
+  }
+
+  // Chart configurations
+  const moodTrendChartData = {
+    labels: getMoodTrendData().map(d => d.date),
+    datasets: [
+      {
+        label: 'Mood',
+        data: getMoodTrendData().map(d => d.mood),
+        borderColor: '#8b5cf6',
+        backgroundColor: 'rgba(139, 92, 246, 0.1)',
+        borderWidth: 2,
+        tension: 0.4,
+        fill: true,
+        pointBackgroundColor: '#8b5cf6',
+        pointRadius: 4,
+        pointHoverRadius: 6
+      }
+    ]
+  }
+
+  const moodTrendChartOptions = {
+    responsive: true,
+    maintainAspectRatio: false,
+    plugins: {
+      legend: {
+        display: false
+      },
+      tooltip: {
+        backgroundColor: 'rgba(0, 0, 0, 0.8)',
+        padding: 12,
+        titleColor: '#fff',
+        bodyColor: '#fff',
+        displayColors: false
+      }
+    },
+    scales: {
+      y: {
+        min: 1,
+        max: 5,
+        ticks: {
+          stepSize: 1
+        },
+        grid: {
+          color: 'rgba(0, 0, 0, 0.05)'
+        }
+      },
+      x: {
+        grid: {
+          display: false
+        }
+      }
+    }
+  }
+
+  const categoryChartData = {
+    labels: getCategoryData().map(d => d.name),
+    datasets: [
+      {
+        data: getCategoryData().map(d => d.value),
+        backgroundColor: getCategoryData().map(d => d.color),
+        borderWidth: 2,
+        borderColor: '#fff'
+      }
+    ]
+  }
+
+  const categoryChartOptions = {
+    responsive: true,
+    maintainAspectRatio: false,
+    plugins: {
+      legend: {
+        position: 'bottom',
+        labels: {
+          padding: 15,
+          font: {
+            size: 12
+          }
+        }
+      },
+      tooltip: {
+        backgroundColor: 'rgba(0, 0, 0, 0.8)',
+        padding: 12,
+        callbacks: {
+          label: function(context) {
+            const label = context.label || ''
+            const value = context.parsed || 0
+            const total = context.dataset.data.reduce((a, b) => a + b, 0)
+            const percentage = ((value / total) * 100).toFixed(1)
+            return `${label}: ${value} (${percentage}%)`
+          }
+        }
+      }
+    }
+  }
+
+  const monthlyChartData = {
+    labels: getMonthlyData().map(d => d.month),
+    datasets: [
+      {
+        label: 'Entries',
+        data: getMonthlyData().map(d => d.entries),
+        backgroundColor: '#8b5cf6',
+        borderColor: '#7c3aed',
+        borderWidth: 1,
+        borderRadius: 6
+      }
+    ]
+  }
+
+  const monthlyChartOptions = {
+    responsive: true,
+    maintainAspectRatio: false,
+    plugins: {
+      legend: {
+        display: false
+      },
+      tooltip: {
+        backgroundColor: 'rgba(0, 0, 0, 0.8)',
+        padding: 12
+      }
+    },
+    scales: {
+      y: {
+        beginAtZero: true,
+        ticks: {
+          stepSize: 1
+        },
+        grid: {
+          color: 'rgba(0, 0, 0, 0.05)'
+        }
+      },
+      x: {
+        grid: {
+          display: false
+        }
+      }
+    }
   }
 
   if (!entries || entries.length === 0) {
@@ -334,258 +472,198 @@ export default function AnalyticsDashboard({ entries }) {
         </div>
 
         <div className="p-6">
-          {!isClient ? (
-            <div className="flex items-center justify-center py-20">
-              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-purple-600"></div>
+          {/* Overview Tab */}
+          {activeTab === 'overview' && (
+            <div className="space-y-6">
+              <div>
+                <h3 className="text-lg font-semibold text-gray-900 mb-4 flex items-center space-x-2">
+                  <LuTrendingUp className="w-5 h-5" />
+                  <span>Mood Trend (Last 30 Days)</span>
+                </h3>
+                <div className="h-[300px]">
+                  <Line data={moodTrendChartData} options={moodTrendChartOptions} />
+                </div>
+              </div>
+
+              <div className="grid md:grid-cols-2 gap-6">
+                <div>
+                  <h3 className="text-lg font-semibold text-gray-900 mb-4 flex items-center space-x-2">
+                    <LuPieChart className="w-5 h-5" />
+                    <span>Category Distribution</span>
+                  </h3>
+                  <div className="h-[250px]">
+                    <Pie data={categoryChartData} options={categoryChartOptions} />
+                  </div>
+                </div>
+
+                <div>
+                  <h3 className="text-lg font-semibold text-gray-900 mb-4 flex items-center space-x-2">
+                    <LuBarChart3 className="w-5 h-5" />
+                    <span>Monthly Activity</span>
+                  </h3>
+                  <div className="h-[250px]">
+                    <Bar data={monthlyChartData} options={monthlyChartOptions} />
+                  </div>
+                </div>
+              </div>
             </div>
-          ) : (
-            <>
-              {/* Overview Tab */}
-              {activeTab === 'overview' && (
-                <div className="space-y-6">
-                  <div>
-                    <h3 className="text-lg font-semibold text-gray-900 mb-4 flex items-center space-x-2">
-                      <LuTrendingUp className="w-5 h-5" />
-                      <span>Mood Trend (Last 30 Days)</span>
-                    </h3>
-                    <ResponsiveContainer width="100%" height={300}>
-                      <LineChart data={getMoodTrendData()}>
-                        <CartesianGrid strokeDasharray="3 3" />
-                        <XAxis dataKey="date" />
-                        <YAxis domain={[1, 5]} ticks={[1, 2, 3, 4, 5]} />
-                        <Tooltip />
-                        <Line 
-                          type="monotone" 
-                          dataKey="mood" 
-                          stroke="#8b5cf6" 
-                          strokeWidth={2}
-                          dot={{ fill: '#8b5cf6', r: 4 }}
-                        />
-                      </LineChart>
-                    </ResponsiveContainer>
-                  </div>
+          )}
 
-                  <div className="grid md:grid-cols-2 gap-6">
-                    <div>
-                      <h3 className="text-lg font-semibold text-gray-900 mb-4 flex items-center space-x-2">
-                        <LuPieChart className="w-5 h-5" />
-                        <span>Category Distribution</span>
-                      </h3>
-                      <ResponsiveContainer width="100%" height={250}>
-                        <PieChart>
-                          <Pie
-                            data={getCategoryData()}
-                            cx="50%"
-                            cy="50%"
-                            labelLine={false}
-                            label={({ name, percent }) => `${name} ${(percent * 100).toFixed(0)}%`}
-                            outerRadius={80}
-                            fill="#8884d8"
-                            dataKey="value"
-                          >
-                            {getCategoryData().map((entry, index) => (
-                              <Cell key={`cell-${index}`} fill={entry.color} />
-                            ))}
-                          </Pie>
-                          <Tooltip />
-                        </PieChart>
-                      </ResponsiveContainer>
-                    </div>
+          {/* Mood Tab */}
+          {activeTab === 'mood' && (
+            <div className="space-y-6">
+              <div>
+                <h3 className="text-lg font-semibold text-gray-900 mb-4">Mood Over Time</h3>
+                <div className="h-[400px]">
+                  <Line data={moodTrendChartData} options={{
+                    ...moodTrendChartOptions,
+                    plugins: {
+                      ...moodTrendChartOptions.plugins,
+                      legend: {
+                        display: true,
+                        position: 'top'
+                      }
+                    }
+                  }} />
+                </div>
+              </div>
 
-                    <div>
-                      <h3 className="text-lg font-semibold text-gray-900 mb-4 flex items-center space-x-2">
-                        <LuBarChart3 className="w-5 h-5" />
-                        <span>Monthly Activity</span>
-                      </h3>
-                      <ResponsiveContainer width="100%" height={250}>
-                        <BarChart data={getMonthlyData()}>
-                          <CartesianGrid strokeDasharray="3 3" />
-                          <XAxis dataKey="month" />
-                          <YAxis />
-                          <Tooltip />
-                          <Bar dataKey="entries" fill="#8b5cf6" />
-                        </BarChart>
-                      </ResponsiveContainer>
+              <div className="grid grid-cols-5 gap-4">
+                {[1, 2, 3, 4, 5].map(mood => {
+                  const count = entries.filter(e => e.mood === mood).length
+                  const percentage = ((count / entries.length) * 100).toFixed(1)
+                  return (
+                    <div key={mood} className="text-center p-4 bg-gray-50 rounded-lg">
+                      <div className="text-4xl mb-2">{moodEmojis[mood]}</div>
+                      <div className="text-2xl font-bold text-gray-900">{count}</div>
+                      <div className="text-sm text-gray-600">{percentage}%</div>
                     </div>
+                  )
+                })}
+              </div>
+            </div>
+          )}
+
+          {/* Categories Tab */}
+          {activeTab === 'categories' && (
+            <div className="space-y-6">
+              <div>
+                <h3 className="text-lg font-semibold text-gray-900 mb-4">Category Distribution</h3>
+                <div className="h-[400px] flex items-center justify-center">
+                  <div className="w-full max-w-md">
+                    <Pie data={categoryChartData} options={categoryChartOptions} />
                   </div>
                 </div>
-              )}
+              </div>
 
-              {/* Mood Tab */}
-              {activeTab === 'mood' && (
-                <div className="space-y-6">
-                  <div>
-                    <h3 className="text-lg font-semibold text-gray-900 mb-4">Mood Over Time</h3>
-                    <ResponsiveContainer width="100%" height={400}>
-                      <LineChart data={getMoodTrendData()}>
-                        <CartesianGrid strokeDasharray="3 3" />
-                        <XAxis dataKey="date" />
-                        <YAxis domain={[1, 5]} ticks={[1, 2, 3, 4, 5]} />
-                        <Tooltip />
-                        <Legend />
-                        <Line 
-                          type="monotone" 
-                          dataKey="mood" 
-                          stroke="#8b5cf6" 
-                          strokeWidth={3}
-                          name="Average Mood"
+              <div className="space-y-3">
+                {getCategoryData()
+                  .sort((a, b) => b.value - a.value)
+                  .map(cat => (
+                    <div key={cat.name} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
+                      <div className="flex items-center space-x-3">
+                        <div 
+                          className="w-4 h-4 rounded-full" 
+                          style={{ backgroundColor: cat.color }}
                         />
-                      </LineChart>
-                    </ResponsiveContainer>
-                  </div>
+                        <span className="font-medium">{cat.name}</span>
+                      </div>
+                      <div className="flex items-center space-x-4">
+                        <span className="text-gray-600">{cat.value} entries</span>
+                        <span className="font-bold text-purple-600">
+                          {((cat.value / entries.length) * 100).toFixed(1)}%
+                        </span>
+                      </div>
+                    </div>
+                  ))}
+              </div>
+            </div>
+          )}
 
-                  <div className="grid grid-cols-5 gap-4">
-                    {[1, 2, 3, 4, 5].map(mood => {
-                      const count = entries.filter(e => e.mood === mood).length
-                      const percentage = ((count / entries.length) * 100).toFixed(1)
-                      return (
-                        <div key={mood} className="text-center p-4 bg-gray-50 rounded-lg">
-                          <div className="text-4xl mb-2">{moodEmojis[mood]}</div>
-                          <div className="text-2xl font-bold text-gray-900">{count}</div>
-                          <div className="text-sm text-gray-600">{percentage}%</div>
-                        </div>
-                      )
-                    })}
-                  </div>
+          {/* Activity Tab */}
+          {activeTab === 'activity' && (
+            <div className="space-y-6">
+              <div>
+                <h3 className="text-lg font-semibold text-gray-900 mb-4">Entries Per Month</h3>
+                <div className="h-[400px]">
+                  <Bar data={monthlyChartData} options={{
+                    ...monthlyChartOptions,
+                    plugins: {
+                      ...monthlyChartOptions.plugins,
+                      legend: {
+                        display: true,
+                        position: 'top'
+                      }
+                    }
+                  }} />
                 </div>
-              )}
+              </div>
 
-              {/* Categories Tab */}
-              {activeTab === 'categories' && (
-                <div className="space-y-6">
-                  <div>
-                    <h3 className="text-lg font-semibold text-gray-900 mb-4">Category Distribution</h3>
-                    <ResponsiveContainer width="100%" height={400}>
-                      <PieChart>
-                        <Pie
-                          data={getCategoryData()}
-                          cx="50%"
-                          cy="50%"
-                          labelLine={true}
-                          label={({ name, value, percent }) => 
-                            `${name}: ${value} (${(percent * 100).toFixed(0)}%)`
-                          }
-                          outerRadius={120}
-                          fill="#8884d8"
-                          dataKey="value"
-                        >
-                          {getCategoryData().map((entry, index) => (
-                            <Cell key={`cell-${index}`} fill={entry.color} />
-                          ))}
-                        </Pie>
-                        <Tooltip />
-                      </PieChart>
-                    </ResponsiveContainer>
-                  </div>
-
+              <div className="grid md:grid-cols-2 gap-6">
+                <div className="p-6 bg-gradient-to-br from-purple-50 to-blue-50 rounded-lg">
+                  <h4 className="font-semibold text-gray-900 mb-4">Writing Patterns</h4>
                   <div className="space-y-3">
-                    {getCategoryData()
-                      .sort((a, b) => b.value - a.value)
-                      .map(cat => (
-                        <div key={cat.name} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
-                          <div className="flex items-center space-x-3">
-                            <div 
-                              className="w-4 h-4 rounded-full" 
-                              style={{ backgroundColor: cat.color }}
-                            />
-                            <span className="font-medium">{cat.name}</span>
-                          </div>
-                          <div className="flex items-center space-x-4">
-                            <span className="text-gray-600">{cat.value} entries</span>
-                            <span className="font-bold text-purple-600">
-                              {((cat.value / entries.length) * 100).toFixed(1)}%
-                            </span>
-                          </div>
-                        </div>
-                      ))}
-                  </div>
-                </div>
-              )}
-
-              {/* Activity Tab */}
-              {activeTab === 'activity' && (
-                <div className="space-y-6">
-                  <div>
-                    <h3 className="text-lg font-semibold text-gray-900 mb-4">Entries Per Month</h3>
-                    <ResponsiveContainer width="100%" height={400}>
-                      <BarChart data={getMonthlyData()}>
-                        <CartesianGrid strokeDasharray="3 3" />
-                        <XAxis dataKey="month" />
-                        <YAxis />
-                        <Tooltip />
-                        <Legend />
-                        <Bar dataKey="entries" fill="#8b5cf6" name="Entries" />
-                      </BarChart>
-                    </ResponsiveContainer>
-                  </div>
-
-                  <div className="grid md:grid-cols-2 gap-6">
-                    <div className="p-6 bg-gradient-to-br from-purple-50 to-blue-50 rounded-lg">
-                      <h4 className="font-semibold text-gray-900 mb-4">Writing Patterns</h4>
-                      <div className="space-y-3">
-                        <div className="flex justify-between">
-                          <span className="text-gray-600">Most productive month:</span>
-                          <span className="font-semibold">
-                            {getMonthlyData().sort((a, b) => b.entries - a.entries)[0]?.month || 'N/A'}
-                          </span>
-                        </div>
-                        <div className="flex justify-between">
-                          <span className="text-gray-600">Average entries/month:</span>
-                          <span className="font-semibold">
-                            {(entries.length / Math.max(getMonthlyData().length, 1)).toFixed(1)}
-                          </span>
-                        </div>
-                        <div className="flex justify-between">
-                          <span className="text-gray-600">Current streak:</span>
-                          <span className="font-semibold">{stats.currentStreak} days 🔥</span>
-                        </div>
-                        <div className="flex justify-between">
-                          <span className="text-gray-600">Longest streak:</span>
-                          <span className="font-semibold">{stats.longestStreak} days 🏆</span>
-                        </div>
-                      </div>
+                    <div className="flex justify-between">
+                      <span className="text-gray-600">Most productive month:</span>
+                      <span className="font-semibold">
+                        {getMonthlyData().sort((a, b) => b.entries - a.entries)[0]?.month || 'N/A'}
+                      </span>
                     </div>
-
-                    <div className="p-6 bg-gradient-to-br from-green-50 to-emerald-50 rounded-lg">
-                      <h4 className="font-semibold text-gray-900 mb-4">Mood Insights</h4>
-                      <div className="space-y-3">
-                        <div className="flex justify-between">
-                          <span className="text-gray-600">Average mood:</span>
-                          <span className="font-semibold">
-                            {stats.averageMood} {moodEmojis[Math.round(stats.averageMood)]}
-                          </span>
-                        </div>
-                        <div className="flex justify-between">
-                          <span className="text-gray-600">Best month mood:</span>
-                          <span className="font-semibold">
-                            {getMonthlyData().length > 0 
-                              ? Math.max(...getMonthlyData().map(m => m.avgMood)).toFixed(1)
-                              : '0'} 🎉
-                          </span>
-                        </div>
-                        <div className="flex justify-between">
-                          <span className="text-gray-600">Happiest category:</span>
-                          <span className="font-semibold">
-                            {Object.entries(
-                              entries.reduce((acc, e) => {
-                                if (!acc[e.category]) acc[e.category] = []
-                                acc[e.category].push(e.mood)
-                                return acc
-                              }, {})
-                            )
-                              .map(([cat, moods]) => ({
-                                cat,
-                                avg: moods.reduce((a, b) => a + b) / moods.length
-                              }))
-                              .sort((a, b) => b.avg - a.avg)[0]?.cat || 'N/A'}
-                          </span>
-                        </div>
-                      </div>
+                    <div className="flex justify-between">
+                      <span className="text-gray-600">Average entries/month:</span>
+                      <span className="font-semibold">
+                        {(entries.length / Math.max(getMonthlyData().length, 1)).toFixed(1)}
+                      </span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className="text-gray-600">Current streak:</span>
+                      <span className="font-semibold">{stats.currentStreak} days 🔥</span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className="text-gray-600">Longest streak:</span>
+                      <span className="font-semibold">{stats.longestStreak} days 🏆</span>
                     </div>
                   </div>
                 </div>
-              )}
-            </>
+
+                <div className="p-6 bg-gradient-to-br from-green-50 to-emerald-50 rounded-lg">
+                  <h4 className="font-semibold text-gray-900 mb-4">Mood Insights</h4>
+                  <div className="space-y-3">
+                    <div className="flex justify-between">
+                      <span className="text-gray-600">Average mood:</span>
+                      <span className="font-semibold">
+                        {stats.averageMood} {moodEmojis[Math.round(stats.averageMood)]}
+                      </span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className="text-gray-600">Best month mood:</span>
+                      <span className="font-semibold">
+                        {getMonthlyData().length > 0 
+                          ? Math.max(...getMonthlyData().map(m => m.avgMood)).toFixed(1)
+                          : '0'} 🎉
+                      </span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className="text-gray-600">Happiest category:</span>
+                      <span className="font-semibold">
+                        {Object.entries(
+                          entries.reduce((acc, e) => {
+                            if (!acc[e.category]) acc[e.category] = []
+                            acc[e.category].push(e.mood)
+                            return acc
+                          }, {})
+                        )
+                          .map(([cat, moods]) => ({
+                            cat,
+                            avg: moods.reduce((a, b) => a + b) / moods.length
+                          }))
+                          .sort((a, b) => b.avg - a.avg)[0]?.cat || 'N/A'}
+                      </span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
           )}
         </div>
       </div>
