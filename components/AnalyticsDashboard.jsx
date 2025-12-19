@@ -1,6 +1,6 @@
 "use client"
 import { useState, useEffect, useRef } from 'react'
-import { LuTrendingUp, LuCalendar, LuPieChart, LuBarChart3, LuActivity } from 'react-icons/lu'
+import { LuTrendingUp, LuCalendar, LuPieChart, LuBarChart, LuActivity } from 'react-icons/lu'
 import { motion } from 'framer-motion'
 import {
   Chart as ChartJS,
@@ -362,7 +362,7 @@ export default function AnalyticsDashboard({ entries }) {
   if (!entries || entries.length === 0) {
     return (
       <div className="bg-white rounded-lg shadow-md p-8 text-center">
-        <LuBarChart3 className="w-16 h-16 text-gray-300 mx-auto mb-4" />
+        <LuBarChart className="w-16 h-16 text-gray-300 mx-auto mb-4" />
         <h3 className="text-xl font-semibold text-gray-900 mb-2">No Analytics Yet</h3>
         <p className="text-gray-600">Start writing entries to see your analytics and insights!</p>
       </div>
@@ -498,7 +498,7 @@ export default function AnalyticsDashboard({ entries }) {
 
                 <div>
                   <h3 className="text-lg font-semibold text-gray-900 mb-4 flex items-center space-x-2">
-                    <LuBarChart3 className="w-5 h-5" />
+                    <LuBarChart className="w-5 h-5" />
                     <span>Monthly Activity</span>
                   </h3>
                   <div className="h-[250px]">

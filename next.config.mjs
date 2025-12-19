@@ -92,6 +92,7 @@ const pwaConfig = withPWA({
 
 const nextConfig = {
   reactStrictMode: true,
+  turbopack: {}, // Added this to fix the Turbopack error
 };
 
 export default pwaConfig(nextConfig);
