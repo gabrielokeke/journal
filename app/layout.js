@@ -1,7 +1,7 @@
 // app/layout.js
 import { ClerkProvider } from '@clerk/nextjs'
+import { GoogleAnalytics } from '@next/third-parties/google'
 import { Geist, Geist_Mono } from 'next/font/google'
-// import 'regenerator-runtime/runtime'
 import './globals.css'
 
 const geistSans = Geist({
@@ -54,6 +54,8 @@ export default function RootLayout({ children }) {
         </head>
         <body className={`${geistSans.variable} ${geistMono.variable} antialiased`}>
           {children}
+          {/* Google Analytics */}
+          <GoogleAnalytics gaId={process.env.NEXT_PUBLIC_GA_ID} />
         </body>
       </html>
     </ClerkProvider>
