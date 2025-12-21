@@ -2,7 +2,8 @@
 import { useState, useEffect } from 'react'
 import { useUser } from '@clerk/nextjs'
 import { motion } from 'framer-motion'
-import { LuArrowLeft, LuBarChart } from 'react-icons/lu'
+import { LuArrowLeft} from 'react-icons/lu'
+import { FaChartBar } from 'react-icons/fa'
 import Link from 'next/link'
 import CustomUserProfile from '../../components/CustomUserProfile'
 import AnalyticsDashboard from '../../components/AnalyticsDashboard'
@@ -81,7 +82,7 @@ export default function AnalyticsPage() {
         >
           <div className="flex items-center space-x-3 mb-2">
             <div className="w-12 h-12 bg-gradient-to-r from-purple-600 to-blue-600 rounded-xl flex items-center justify-center">
-              <LuBarChart className="w-6 h-6 text-white" />
+              <FaChartBar className="w-6 h-6 text-white" />
             </div>
             <div>
               <h1 className="text-3xl font-bold text-gray-900">Analytics Dashboard</h1>

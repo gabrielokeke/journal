@@ -11,6 +11,12 @@
   "dependencies": {
     "@clerk/nextjs": "^6.27.1",
     "@next/third-parties": "^16.1.0",
+    "@tiptap/extension-color": "^3.14.0",
+    "@tiptap/extension-highlight": "^3.14.0",
+    "@tiptap/extension-text-style": "^3.14.0",
+    "@tiptap/extension-underline": "^3.14.0",
+    "@tiptap/react": "^3.14.0",
+    "@tiptap/starter-kit": "^3.14.0",
     "chart.js": "^4.5.1",
     "framer-motion": "^12.23.12",
     "mongodb": "^6.18.0",

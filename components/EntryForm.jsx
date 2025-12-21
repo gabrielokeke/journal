@@ -4,10 +4,15 @@ import { LuUpload, LuX, LuWifiOff, LuMic } from 'react-icons/lu'
 import { saveOfflineEntry } from '../lib/offlineStorage'
 import dynamic from 'next/dynamic'
 
-// Dynamically import VoiceRecorder to prevent SSR issues
+// Dynamically import components to prevent SSR issues
 const VoiceRecorder = dynamic(() => import('./VoiceRecorder'), {
   ssr: false,
   loading: () => <div>Loading voice recorder...</div>
+})
+
+const RichTextEditor = dynamic(() => import('./RichTextEditor'), {
+  ssr: false,
+  loading: () => <div className="w-full h-32 border border-gray-300 rounded-lg animate-pulse bg-gray-50"></div>
 })
 
 const categories = [
@@ -129,12 +134,10 @@ export default function EntryForm({ onSubmit, editingEntry }) {
   const handleVoiceTranscript = useCallback((transcript) => {
     console.log('🎤 [EntryForm] Received transcript:', transcript)
     
-    // Add transcript to content
+    // Add transcript to content as HTML
     setContent(prevContent => {
-      if (prevContent) {
-        return prevContent + '\n\n' + transcript
-      }
-      return transcript
+      const separator = prevContent ? '<p><br></p>' : ''
+      return prevContent + separator + `<p>${transcript}</p>`
     })
     
     // Close the modal
@@ -229,59 +232,67 @@ export default function EntryForm({ onSubmit, editingEntry }) {
   return (
     <>
       {offlineMode && (
-        <div className="bg-orange-50 border border-orange-200 text-orange-800 px-4 py-3 rounded-lg mb-4 flex items-center space-x-2">
-          <LuWifiOff className="w-5 h-5" />
+        <div className="bg-orange-50 border border-orange-200 text-orange-800 px-3 py-2 sm:px-4 sm:py-3 rounded-lg mb-4 flex items-center space-x-2 text-sm">
+          <LuWifiOff className="w-4 h-4 sm:w-5 sm:h-5 flex-shrink-0" />
           <span className="font-medium">You're offline. Entries will be saved locally and synced when online.</span>
         </div>
       )}
 
       <form
         onSubmit={handleSubmit}
-        className="bg-white p-6 rounded-lg shadow-md max-w-lg mx-auto mb-6"
+        className="bg-white p-4 sm:p-6 rounded-lg shadow-md w-full max-w-3xl mx-auto mb-6"
       >
-        <h2 className="text-2xl font-semibold mb-4 text-gray-800">
+        <h2 className="text-xl sm:text-2xl font-semibold mb-4 text-gray-800">
           {editingEntry ? "Edit Entry" : "Add New Entry"}
         </h2>
 
-        <input
-          type="text"
-          placeholder="Title"
-          className="w-full p-3 mb-4 text-black placeholder:text-gray-400 border border-gray-300 bg-white rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-          value={title}
-          onChange={(e) => setTitle(e.target.value)}
-          required
-          maxLength={100}
-          disabled={submitting}
-        />
-
-        <div className="relative mb-4">
-          <textarea
-            placeholder="What did you accomplish today?"
-            className="w-full p-3 pr-12 border border-gray-300 text-black placeholder:text-gray-400 bg-white rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 resize-none"
-            rows={4}
-            value={content}
-            onChange={(e) => setContent(e.target.value)}
+        {/* Title Input */}
+        <div className="mb-4">
+          <label className="block text-sm font-medium text-gray-700 mb-2">
+            Title
+          </label>
+          <input
+            type="text"
+            placeholder="Give your entry a title..."
+            className="w-full p-3 text-sm sm:text-base text-black placeholder:text-gray-400 border border-gray-300 bg-white rounded-md focus:outline-none focus:ring-2 focus:ring-purple-500"
+            value={title}
+            onChange={(e) => setTitle(e.target.value)}
             required
-            maxLength={1000}
+            maxLength={100}
             disabled={submitting}
           />
-          
-          <button
-            type="button"
-            onClick={() => {
-              console.log('🎤 [EntryForm] Opening voice recorder')
-              setShowVoiceRecorder(true)
-            }}
-            disabled={submitting}
-            className="absolute bottom-3 right-3 p-2 bg-gradient-to-r from-purple-600 to-blue-600 text-white rounded-full hover:from-purple-700 hover:to-blue-700 transition-all shadow-md disabled:opacity-50"
-            title="Voice to text"
-          >
-            <LuMic className="w-5 h-5" />
-          </button>
         </div>
 
+        {/* Rich Text Editor */}
         <div className="mb-4">
-          <label className="block mb-2 font-medium text-gray-700">
+          <div className="flex items-center justify-between mb-2">
+            <label className="block text-sm font-medium text-gray-700">
+              Your Thoughts
+            </label>
+            <button
+              type="button"
+              onClick={() => {
+                console.log('🎤 [EntryForm] Opening voice recorder')
+                setShowVoiceRecorder(true)
+              }}
+              disabled={submitting}
+              className="flex items-center gap-1.5 px-3 py-1.5 bg-gradient-to-r from-purple-600 to-blue-600 text-white text-xs sm:text-sm rounded-full hover:from-purple-700 hover:to-blue-700 transition-all shadow-sm disabled:opacity-50"
+              title="Voice to text"
+            >
+              <LuMic className="w-3 h-3 sm:w-4 sm:h-4" />
+              <span className="hidden sm:inline">Voice</span>
+            </button>
+          </div>
+          <RichTextEditor
+            content={content}
+            onChange={setContent}
+            placeholder="Start writing your thoughts... Use the toolbar to format your text!"
+          />
+        </div>
+
+        {/* Image Upload */}
+        <div className="mb-4">
+          <label className="block mb-2 text-sm font-medium text-gray-700">
             Add Image (optional)
           </label>
           
@@ -298,19 +309,19 @@ export default function EntryForm({ onSubmit, editingEntry }) {
               />
               <label
                 htmlFor="image-upload"
-                className={`flex flex-col items-center justify-center w-full h-32 border-2 border-gray-300 border-dashed rounded-lg ${
+                className={`flex flex-col items-center justify-center w-full h-24 sm:h-32 border-2 border-gray-300 border-dashed rounded-lg ${
                   submitting || uploading ? 'cursor-not-allowed opacity-50' : 'cursor-pointer hover:bg-gray-100'
                 } bg-gray-50 transition-colors`}
               >
                 {uploading ? (
                   <div className="flex items-center space-x-2">
-                    <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-purple-600"></div>
-                    <span className="text-gray-600">Uploading...</span>
+                    <div className="animate-spin rounded-full h-5 w-5 sm:h-6 sm:w-6 border-b-2 border-purple-600"></div>
+                    <span className="text-sm text-gray-600">Uploading...</span>
                   </div>
                 ) : (
-                  <div className="flex flex-col items-center justify-center pt-5 pb-6">
-                    <LuUpload className="w-8 h-8 mb-2 text-gray-400" />
-                    <p className="mb-2 text-sm text-gray-500">
+                  <div className="flex flex-col items-center justify-center pt-3 pb-3 sm:pt-5 sm:pb-6">
+                    <LuUpload className="w-6 h-6 sm:w-8 sm:h-8 mb-1 sm:mb-2 text-gray-400" />
+                    <p className="mb-1 sm:mb-2 text-xs sm:text-sm text-gray-500">
                       <span className="font-semibold">Click to upload</span> an image
                     </p>
                     <p className="text-xs text-gray-500">PNG, JPG, GIF up to 5MB</p>
@@ -323,27 +334,28 @@ export default function EntryForm({ onSubmit, editingEntry }) {
               <img
                 src={imagePreview}
                 alt="Preview"
-                className="w-full h-32 object-cover rounded-lg border border-gray-300"
+                className="w-full h-24 sm:h-32 object-cover rounded-lg border border-gray-300"
               />
               <button
                 type="button"
                 onClick={removeImage}
                 disabled={submitting}
-                className="absolute top-2 right-2 bg-red-500 hover:bg-red-600 text-white rounded-full p-1 transition-colors disabled:opacity-50"
+                className="absolute top-2 right-2 bg-red-500 hover:bg-red-600 text-white rounded-full p-1.5 transition-colors disabled:opacity-50 shadow-md"
               >
-                <LuX className="w-4 h-4" />
+                <LuX className="w-3 h-3 sm:w-4 sm:h-4" />
               </button>
             </div>
           )}
         </div>
 
-        <div className="flex flex-wrap gap-4 mb-4">
+        {/* Category and Mood */}
+        <div className="flex flex-col sm:flex-row gap-3 sm:gap-4 mb-4">
           <div className="flex flex-col flex-1">
-            <label className="mb-1 font-medium text-gray-700">Category</label>
+            <label className="mb-1.5 text-sm font-medium text-gray-700">Category</label>
             <select
               value={category}
               onChange={(e) => setCategory(e.target.value)}
-              className="p-2 border border-gray-300 rounded-md focus:outline-none text-black bg-white focus:ring-2 focus:ring-blue-500"
+              className="p-2.5 border border-gray-300 rounded-md focus:outline-none text-sm sm:text-base text-black bg-white focus:ring-2 focus:ring-purple-500"
               required
               disabled={submitting}
             >
@@ -356,11 +368,11 @@ export default function EntryForm({ onSubmit, editingEntry }) {
           </div>
 
           <div className="flex flex-col flex-1">
-            <label className="mb-1 font-medium text-gray-700">Mood</label>
+            <label className="mb-1.5 text-sm font-medium text-gray-700">Mood</label>
             <select
               value={mood}
               onChange={(e) => setMood(parseInt(e.target.value))}
-              className="p-2 border border-gray-300 rounded-md focus:outline-none text-black bg-white focus:ring-2 focus:ring-blue-500"
+              className="p-2.5 border border-gray-300 rounded-md focus:outline-none text-sm sm:text-base text-black bg-white focus:ring-2 focus:ring-purple-500"
               required
               disabled={submitting}
             >
@@ -373,21 +385,22 @@ export default function EntryForm({ onSubmit, editingEntry }) {
           </div>
         </div>
 
+        {/* Submit Button */}
         <button
           type="submit"
           disabled={uploading || submitting}
-          className="w-full bg-gradient-to-r from-purple-600 to-blue-600 text-white py-3 rounded-md font-semibold disabled:opacity-50 disabled:cursor-not-allowed transition-opacity hover:from-purple-700 hover:to-blue-700 flex items-center justify-center space-x-2"
+          className="w-full bg-gradient-to-r from-purple-600 to-blue-600 text-white py-3 rounded-md font-semibold text-sm sm:text-base disabled:opacity-50 disabled:cursor-not-allowed transition-opacity hover:from-purple-700 hover:to-blue-700 flex items-center justify-center space-x-2"
         >
           {submitting ? (
             <>
-              <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-white"></div>
+              <div className="animate-spin rounded-full h-4 w-4 sm:h-5 sm:w-5 border-b-2 border-white"></div>
               <span>Saving...</span>
             </>
           ) : uploading ? (
             <span>Processing Image...</span>
           ) : offlineMode ? (
             <>
-              <LuWifiOff className="w-5 h-5" />
+              <LuWifiOff className="w-4 h-4 sm:w-5 sm:h-5" />
               <span>{editingEntry ? "Update Entry (Offline)" : "Save Entry (Offline)"}</span>
             </>
           ) : (

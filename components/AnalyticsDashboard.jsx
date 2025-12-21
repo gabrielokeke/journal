@@ -1,6 +1,6 @@
 "use client"
 import { useState, useEffect, useRef } from 'react'
-import { LuTrendingUp, LuCalendar, LuPieChart, LuBarChart, LuActivity } from 'react-icons/lu'
+import { FaChartLine, FaCalendar, FaChartBar, FaChartPie, FaChartArea } from 'react-icons/fa'
 import { motion } from 'framer-motion'
 import {
   Chart as ChartJS,
@@ -362,7 +362,7 @@ export default function AnalyticsDashboard({ entries }) {
   if (!entries || entries.length === 0) {
     return (
       <div className="bg-white rounded-lg shadow-md p-8 text-center">
-        <LuBarChart className="w-16 h-16 text-gray-300 mx-auto mb-4" />
+        <FaChartBar className="w-16 h-16 text-gray-300 mx-auto mb-4" />
         <h3 className="text-xl font-semibold text-gray-900 mb-2">No Analytics Yet</h3>
         <p className="text-gray-600">Start writing entries to see your analytics and insights!</p>
       </div>
@@ -379,7 +379,7 @@ export default function AnalyticsDashboard({ entries }) {
           className="bg-gradient-to-br from-purple-500 to-purple-600 rounded-lg p-4 text-white"
         >
           <div className="flex items-center justify-between mb-2">
-            <LuActivity className="w-5 h-5" />
+            <FaChartArea className="w-5 h-5" />
             <span className="text-2xl font-bold">{stats.totalEntries}</span>
           </div>
           <p className="text-purple-100 text-sm">Total Entries</p>
@@ -405,7 +405,7 @@ export default function AnalyticsDashboard({ entries }) {
           className="bg-gradient-to-br from-green-500 to-green-600 rounded-lg p-4 text-white"
         >
           <div className="flex items-center justify-between mb-2">
-            <LuCalendar className="w-5 h-5" />
+            <FaCalendar className="w-5 h-5" />
             <span className="text-2xl font-bold">{stats.entriesThisMonth}</span>
           </div>
           <p className="text-green-100 text-sm">This Month</p>
@@ -444,7 +444,7 @@ export default function AnalyticsDashboard({ entries }) {
           className="bg-gradient-to-br from-pink-500 to-pink-600 rounded-lg p-4 text-white"
         >
           <div className="flex items-center justify-between mb-2">
-            <LuPieChart className="w-5 h-5" />
+            <FaChartPie className="w-5 h-5" />
             <span className="text-sm font-bold truncate">{stats.mostUsedCategory}</span>
           </div>
           <p className="text-pink-100 text-sm">Top Category</p>
@@ -477,7 +477,7 @@ export default function AnalyticsDashboard({ entries }) {
             <div className="space-y-6">
               <div>
                 <h3 className="text-lg font-semibold text-gray-900 mb-4 flex items-center space-x-2">
-                  <LuTrendingUp className="w-5 h-5" />
+                  <FaChartLine className="w-5 h-5" />
                   <span>Mood Trend (Last 30 Days)</span>
                 </h3>
                 <div className="h-[300px]">
@@ -488,7 +488,7 @@ export default function AnalyticsDashboard({ entries }) {
               <div className="grid md:grid-cols-2 gap-6">
                 <div>
                   <h3 className="text-lg font-semibold text-gray-900 mb-4 flex items-center space-x-2">
-                    <LuPieChart className="w-5 h-5" />
+                    <FaChartPie className="w-5 h-5" />
                     <span>Category Distribution</span>
                   </h3>
                   <div className="h-[250px]">
@@ -498,7 +498,7 @@ export default function AnalyticsDashboard({ entries }) {
 
                 <div>
                   <h3 className="text-lg font-semibold text-gray-900 mb-4 flex items-center space-x-2">
-                    <LuBarChart className="w-5 h-5" />
+                    <FaChartBar className="w-5 h-5" />
                     <span>Monthly Activity</span>
                   </h3>
                   <div className="h-[250px]">
