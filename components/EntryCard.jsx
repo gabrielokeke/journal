@@ -1,6 +1,7 @@
 "use client"
 import { useState, useEffect } from 'react'
 import { LuWifiOff } from 'react-icons/lu'
+import { FaVolumeUp } from 'react-icons/fa'
 
 export default function EntryCard({ entry, onEdit, onDelete }) {
   const [isDeleting, setIsDeleting] = useState(false)
@@ -50,6 +51,12 @@ export default function EntryCard({ entry, onEdit, onDelete }) {
       hour: '2-digit',
       minute: '2-digit'
     })
+  }
+
+  const formatDuration = (seconds) => {
+    const mins = Math.floor(seconds / 60)
+    const secs = seconds % 60
+    return `${mins}:${secs.toString().padStart(2, '0')}`
   }
 
   const handleEdit = () => {
@@ -121,8 +128,29 @@ export default function EntryCard({ entry, onEdit, onDelete }) {
         <div className="mb-2">
           <h2 className="text-2xl font-semibold text-gray-900">{entry.title}</h2>
         </div>
+
+        {/* Audio Player - NEW */}
+        {entry.audioData && (
+          <div className="mb-4 p-3 bg-purple-50 rounded-lg border border-purple-200">
+            <div className="flex items-center space-x-2 mb-2">
+              <FaVolumeUp className="w-4 h-4 text-purple-600" />
+              <span className="text-sm font-medium text-purple-900">
+                Voice Recording {entry.audioDuration && `(${formatDuration(entry.audioDuration)})`}
+              </span>
+            </div>
+            <audio 
+              src={entry.audioData} 
+              controls 
+              className="w-full"
+              controlsList="nodownload"
+            />
+          </div>
+        )}
         
-        <p className="mt-2 text-gray-700 leading-relaxed">{entry.content}</p>
+        <div 
+              className="mt-2 text-gray-700 leading-relaxed prose max-w-none"
+              dangerouslySetInnerHTML={{ __html: entry.content }}
+        />
 
         <div className="flex items-center mt-4 space-x-4">
           <span
@@ -171,7 +199,7 @@ export default function EntryCard({ entry, onEdit, onDelete }) {
             </button>
           </div>
           
-          {/* Show image indicator if there's an image */}
+          {/* Show media indicators */}
           <div className="flex items-center space-x-2">
             {entry.image && (
               <div className="flex items-center text-gray-400">
@@ -179,6 +207,13 @@ export default function EntryCard({ entry, onEdit, onDelete }) {
                   <path fillRule="evenodd" d="M4 3a2 2 0 00-2 2v10a2 2 0 002 2h12a2 2 0 002-2V5a2 2 0 00-2-2H4zm12 12H4l4-8 3 6 2-4 3 6z" clipRule="evenodd" />
                 </svg>
                 <span className="text-xs">Image</span>
+              </div>
+            )}
+
+            {entry.audioData && (
+              <div className="flex items-center text-purple-500">
+                <FaVolumeUp className="w-4 h-4 mr-1" />
+                <span className="text-xs">Audio</span>
               </div>
             )}
             

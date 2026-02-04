@@ -24,6 +24,25 @@ const EntrySchema = new mongoose.Schema({
     maxlength: [5000000, 'Image size too large'] // Reduced from 10MB to 5MB
   },
   
+  // Audio recording fields (NEW)
+  audioData: {
+    type: String, // Base64 encoded audio
+    required: false,
+    maxlength: [10000000, 'Audio file too large'] // 10MB limit
+  },
+  
+  audioDuration: {
+    type: Number, // Duration in seconds
+    required: false,
+    min: [0, 'Duration cannot be negative']
+  },
+  
+  audioMimeType: {
+    type: String, // e.g., 'audio/webm', 'audio/mp3'
+    required: false,
+    maxlength: [50, 'Invalid audio type']
+  },
+  
   // Mood rating (1-5) often displayed as emojis:
   // 1 = 😢, 2 = 😞, 3 = 😐, 4 = 😊, 5 = 🎉
   mood: {
@@ -66,6 +85,9 @@ EntrySchema.methods.toJSON = function() {
     title: entry.title,
     content: entry.content,
     image: entry.image,
+    audioData: entry.audioData,
+    audioDuration: entry.audioDuration,
+    audioMimeType: entry.audioMimeType,
     mood: entry.mood,
     category: entry.category,
     userId: entry.userId,

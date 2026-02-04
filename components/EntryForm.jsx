@@ -42,6 +42,9 @@ export default function EntryForm({ onSubmit, editingEntry }) {
   const [mood, setMood] = useState(3)
   const [image, setImage] = useState("")
   const [imagePreview, setImagePreview] = useState("")
+  const [audioData, setAudioData] = useState(null)
+  const [audioDuration, setAudioDuration] = useState(null)
+  const [audioMimeType, setAudioMimeType] = useState(null)
   const [uploading, setUploading] = useState(false)
   const [submitting, setSubmitting] = useState(false)
   const [offlineMode, setOfflineMode] = useState(false)
@@ -73,6 +76,9 @@ export default function EntryForm({ onSubmit, editingEntry }) {
       setMood(editingEntry.mood || 3)
       setImage(editingEntry.image || "")
       setImagePreview(editingEntry.image || "")
+      setAudioData(editingEntry.audioData || null)
+      setAudioDuration(editingEntry.audioDuration || null)
+      setAudioMimeType(editingEntry.audioMimeType || null)
     } else {
       resetForm()
     }
@@ -85,6 +91,9 @@ export default function EntryForm({ onSubmit, editingEntry }) {
     setMood(3)
     setImage("")
     setImagePreview("")
+    setAudioData(null)
+    setAudioDuration(null)
+    setAudioMimeType(null)
     if (fileInputRef.current) {
       fileInputRef.current.value = ""
     }
@@ -130,19 +139,27 @@ export default function EntryForm({ onSubmit, editingEntry }) {
     }
   }
 
-  // Use useCallback to prevent re-creating this function on every render
-  const handleVoiceTranscript = useCallback((transcript) => {
-    console.log('🎤 [EntryForm] Received transcript:', transcript)
-    
-    // Add transcript to content as HTML
-    setContent(prevContent => {
-      const separator = prevContent ? '<p><br></p>' : ''
-      return prevContent + separator + `<p>${transcript}</p>`
-    })
-    
-    // Close the modal
+  // Handle voice recording completion
+  const handleVoiceRecording = useCallback((audioInfo) => {
+    console.log('🎤 [EntryForm] Received audio recording:', audioInfo)
+    setAudioData(audioInfo.audioData)
+    setAudioDuration(audioInfo.duration)
+    setAudioMimeType(audioInfo.mimeType)
     setShowVoiceRecorder(false)
   }, [])
+
+  // Remove audio recording
+  const removeAudio = () => {
+    setAudioData(null)
+    setAudioDuration(null)
+    setAudioMimeType(null)
+  }
+
+  const formatDuration = (seconds) => {
+    const mins = Math.floor(seconds / 60)
+    const secs = seconds % 60
+    return `${mins}:${secs.toString().padStart(2, '0')}`
+  }
 
   const handleSubmit = async (e) => {
     e.preventDefault()
@@ -153,7 +170,10 @@ export default function EntryForm({ onSubmit, editingEntry }) {
       content, 
       category, 
       mood, 
-      image 
+      image,
+      audioData,
+      audioDuration,
+      audioMimeType
     }
 
     if (!navigator.onLine) {
@@ -246,6 +266,46 @@ export default function EntryForm({ onSubmit, editingEntry }) {
           {editingEntry ? "Edit Entry" : "Add New Entry"}
         </h2>
 
+        {/* Voice Recorder Button */}
+        <div className="mb-4">
+          <button
+            type="button"
+            onClick={() => setShowVoiceRecorder(true)}
+            disabled={submitting}
+            className="w-full flex items-center justify-center gap-2 px-4 py-3 bg-gradient-to-r from-purple-600 to-blue-600 text-white rounded-lg hover:from-purple-700 hover:to-blue-700 transition-all shadow-sm disabled:opacity-50"
+          >
+            <LuMic className="w-5 h-5" />
+            <span className="font-medium">Record Voice Note</span>
+          </button>
+        </div>
+
+        {/* Audio Preview */}
+        {audioData && (
+          <div className="mb-4 p-4 bg-purple-50 rounded-lg border border-purple-200">
+            <div className="flex items-center justify-between mb-2">
+              <div className="flex items-center space-x-2">
+                <LuMic className="w-4 h-4 text-purple-600" />
+                <span className="text-sm font-medium text-purple-900">
+                  Voice Recording {audioDuration && `(${formatDuration(audioDuration)})`}
+                </span>
+              </div>
+              <button
+                type="button"
+                onClick={removeAudio}
+                disabled={submitting}
+                className="text-red-600 hover:text-red-700 text-sm font-medium"
+              >
+                Remove
+              </button>
+            </div>
+            <audio 
+              src={audioData} 
+              controls 
+              className="w-full"
+            />
+          </div>
+        )}
+
         {/* Title Input */}
         <div className="mb-4">
           <label className="block text-sm font-medium text-gray-700 mb-2">
@@ -265,24 +325,9 @@ export default function EntryForm({ onSubmit, editingEntry }) {
 
         {/* Rich Text Editor */}
         <div className="mb-4">
-          <div className="flex items-center justify-between mb-2">
-            <label className="block text-sm font-medium text-gray-700">
-              Your Thoughts
-            </label>
-            <button
-              type="button"
-              onClick={() => {
-                console.log('🎤 [EntryForm] Opening voice recorder')
-                setShowVoiceRecorder(true)
-              }}
-              disabled={submitting}
-              className="flex items-center gap-1.5 px-3 py-1.5 bg-gradient-to-r from-purple-600 to-blue-600 text-white text-xs sm:text-sm rounded-full hover:from-purple-700 hover:to-blue-700 transition-all shadow-sm disabled:opacity-50"
-              title="Voice to text"
-            >
-              <LuMic className="w-3 h-3 sm:w-4 sm:h-4" />
-              <span className="hidden sm:inline">Voice</span>
-            </button>
-          </div>
+          <label className="block text-sm font-medium text-gray-700 mb-2">
+            Your Thoughts
+          </label>
           <RichTextEditor
             content={content}
             onChange={setContent}
@@ -415,15 +460,21 @@ export default function EntryForm({ onSubmit, editingEntry }) {
         )}
       </form>
 
-      {/* Voice Recorder Modal - Only render when needed */}
+      {/* Voice Recorder Modal */}
       {showVoiceRecorder && (
-        <VoiceRecorder
-          onTranscript={handleVoiceTranscript}
-          onClose={() => {
-            console.log('🎤 [EntryForm] Closing voice recorder')
-            setShowVoiceRecorder(false)
-          }}
-        />
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-lg p-6 max-w-md w-full">
+            <VoiceRecorder
+              onTranscriptionComplete={handleVoiceRecording}
+            />
+            <button
+              onClick={() => setShowVoiceRecorder(false)}
+              className="w-full mt-4 px-4 py-2 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 transition-colors"
+            >
+              Close
+            </button>
+          </div>
+        </div>
       )}
     </>
   )
